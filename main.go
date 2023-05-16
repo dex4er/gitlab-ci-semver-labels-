@@ -23,6 +23,7 @@ func main() {
 
 	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name of the variable with Gitlab token")
+	rootCmd.Flags().Bool("fetch-tags", true, "fetch tags from git repo")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
@@ -30,22 +31,26 @@ func main() {
 }
 
 func rootCmd(cmd *cobra.Command, args []string) error {
-	repositoryPath := cmd.Flag("work-tree").Value.String()
-	gitlabTokenEnv := cmd.Flag("gitlab-token-env").Value.String()
-
-	gitlabToken := os.Getenv(gitlabTokenEnv)
+	logLevel := os.Getenv("LOGLEVEL")
+	if logLevel == "" {
+		logLevel = "ERROR"
+	}
 
 	filter := &logutils.LevelFilter{
 		Levels: []logutils.LogLevel{"DEBUG", "ERROR"},
-		MinLevel: logutils.LogLevel("ERROR"),
+		MinLevel: logutils.LogLevel(logLevel),
 		Writer: os.Stderr,
 	}
 	log.SetOutput(filter)
 
-	tag, err := git.FindLastTag(repositoryPath, gitlabToken)
+	tag, err := git.FindLastTag(git.FindLastTagParams{
+		RepositoryPath: cmd.Flag("work-tree").Value.String(),
+		GitlabToken: os.Getenv(cmd.Flag("gitlab-token-env").Value.String()),
+		FetchTags: cmd.Flag("fetch-tags").Value.String() == "true",
+	})
 
 	if err != nil {
-		log.Fatalf("[ERROR] %v\n", err)
+		log.Fatalf("[ERROR] Can't find the last git tag: %v\n", err)
 	}
 
 	fmt.Println(tag)

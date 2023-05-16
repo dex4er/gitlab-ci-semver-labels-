@@ -1,6 +1,7 @@
 package git
 
 import (
+	"log"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -11,17 +12,27 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
-func FindLastTag(repositoryPath string, gitlabToken string) (string, error) {
+type FindLastTagParams struct{
+	RepositoryPath string
+	GitlabToken string
+	FetchTags bool
+}
+
+func FindLastTag(params FindLastTagParams) (string, error) {
+	log.Printf("[DEBUG] FindLastTag(RepositoryPath=%v, GitlabToken=%v, FetchTags=%v)\n", params.RepositoryPath, params.GitlabToken, params.FetchTags)
+
 	// Open the repository
-	repo, err := git.PlainOpen(repositoryPath)
+	repo, err := git.PlainOpen(params.RepositoryPath)
 	if err != nil {
 		return "", err
 	}
 
 	// Fetch all tags
-	err = fetchTags(repo, gitlabToken)
-	if err != nil {
-		return "", err
+	if params.FetchTags {
+		err = fetchTags(repo, params.GitlabToken)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// Get the HEAD reference
