@@ -22,6 +22,7 @@ func main() {
 	}
 
 	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
+	rootCmd.Flags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "`VAR` name for environment variable with Gitlab token")
 	rootCmd.Flags().Bool("fetch-tags", true, "fetch tags from git repo")
 
@@ -45,6 +46,7 @@ func rootCmd(cmd *cobra.Command, args []string) error {
 
 	tag, err := git.FindLastTag(git.FindLastTagParams{
 		RepositoryPath: cmd.Flag("work-tree").Value.String(),
+		RemoteName: cmd.Flag("remote-name").Value.String(),
 		GitlabToken: os.Getenv(cmd.Flag("gitlab-token-env").Value.String()),
 		FetchTags: cmd.Flag("fetch-tags").Value.String() == "true",
 	})

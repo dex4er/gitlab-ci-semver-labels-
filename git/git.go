@@ -14,12 +14,19 @@ import (
 
 type FindLastTagParams struct{
 	RepositoryPath string
+	RemoteName string
 	GitlabToken string
 	FetchTags bool
 }
 
 func FindLastTag(params FindLastTagParams) (string, error) {
-	log.Printf("[DEBUG] FindLastTag(RepositoryPath=%v, GitlabToken=%v, FetchTags=%v)\n", params.RepositoryPath, params.GitlabToken, params.FetchTags)
+	log.Printf(
+		"[DEBUG] FindLastTag(RepositoryPath=%v, RemoteName=%v, GitlabToken=%v, FetchTags=%v)\n", 
+		params.RepositoryPath, 
+		params.RemoteName,
+		params.GitlabToken, 
+		params.FetchTags,
+	)
 
 	// Open the repository
 	repo, err := git.PlainOpen(params.RepositoryPath)
@@ -29,7 +36,7 @@ func FindLastTag(params FindLastTagParams) (string, error) {
 
 	// Fetch all tags
 	if params.FetchTags {
-		err = fetchTags(repo, params.GitlabToken)
+		err = fetchTags(repo, params.RemoteName, params.GitlabToken)
 		if err != nil {
 			return "", err
 		}
@@ -68,7 +75,7 @@ func getAuth(accessToken string) transport.AuthMethod {
 }
 
 // Fetch all tags 
-func fetchTags(repo *git.Repository, accessToken string) (error) {
+func fetchTags(repo *git.Repository, remoteName string, accessToken string) (error) {
 	fetchOptions := &git.FetchOptions{
 		RemoteName: "origin",
 		RefSpecs:   []config.RefSpec{"+refs/tags/*:refs/tags/*"},
@@ -83,6 +90,7 @@ func fetchTags(repo *git.Repository, accessToken string) (error) {
 
 // Find the most recent tag that points to the given commit object
 func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) (string, error) {
+	log.Printf("[DEBUG] findMostRecentTagForCommit(repo=%v, commitObj=%v)\n", repo, commitObj)
 	tagRefs, err := repo.Tags()
 	if err != nil {
 		return "", err
@@ -91,6 +99,7 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 	var mostRecentTag *plumbing.Reference
 	var mostRecentCommitTime time.Time 
 	err = tagRefs.ForEach(func(ref *plumbing.Reference) error {
+		log.Printf("[DEBUG] findMostRecentTagForCommit tagRefs.ForEach(ref=%v)\n", ref)
 		if ref.Type() != plumbing.SymbolicReference {
 			tagCommitObj, err := repo.CommitObject(ref.Hash())
 			if err != nil {
