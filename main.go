@@ -49,8 +49,8 @@ func main() {
 	rootCmd.Flags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().Bool("fetch-tags", true, "fetch tags from git repo")
-
-	rootCmd.Flags().VarP(enumflag.New(&bumpmode, "bump", BumpModeIds, enumflag.EnumCaseInsensitive), "bump", "b", "bump version without checking labels: initial, prerelease, patch, minor, major")
+	rootCmd.Flags().Bool("current", false, "show current version")
+	rootCmd.Flags().VarP(enumflag.New(&bumpmode, "bump", BumpModeIds, enumflag.EnumCaseInsensitive), "bump", "b", "bump version without checking labels: false, current, initial, prerelease, patch, minor, major")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
@@ -70,10 +70,12 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	log.SetOutput(filter)
 
+	gitlabToken := os.Getenv(cmd.Flag("gitlab-token-env").Value.String())
+
 	tag, err := git.FindLastTag(git.FindLastTagParams{
 		RepositoryPath: cmd.Flag("work-tree").Value.String(),
 		RemoteName:     cmd.Flag("remote-name").Value.String(),
-		GitlabToken:    os.Getenv(cmd.Flag("gitlab-token-env").Value.String()),
+		GitlabToken:    gitlabToken,
 		FetchTags:      cmd.Flag("fetch-tags").Value.String() == "true",
 	})
 
@@ -86,7 +88,12 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	if bumpmode != 0 {
+	if cmd.Flag("current").Value.String() == "true" {
+		fmt.Println(tag)
+		return nil
+	}
+
+	if bumpmode != False {
 		log.Printf("[DEBUG] Bump mode %v\n", bumpmode)
 
 		var ver string
@@ -114,7 +121,17 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 		fmt.Println(ver)
+		return nil
 	}
+
+	// gl, err := gitlab.NewClient(gitlabToken)
+	// if err != nil {
+	// 	log.Fatalf("[ERROR] Failed to create client: %v\n", err)
+	// }
+
+	// projectId = os.Getenv("")
+
+	// gl.MergeRequests.GetMergeRequest()
 
 	return nil
 }

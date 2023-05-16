@@ -7,6 +7,11 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
+func IsValid(version string) bool {
+	_, err := semver.NewVersion(version)
+	return err == nil
+}
+
 func incrementNumberAsString(number string) string {
 	num, err := strconv.Atoi(number)
 	if err != nil {

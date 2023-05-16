@@ -4,14 +4,14 @@ import (
 	"log"
 	"time"
 
-	"golang.org/x/mod/semver"
-
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+
+	"github.com/dex4er/gitlab-ci-semver-labels/semver"
 )
 
 type FindLastTagParams struct {
