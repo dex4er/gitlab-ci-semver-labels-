@@ -3,10 +3,13 @@ module github.com/dex4er/gitlab-ci-semver-labels
 go 1.20
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/hashicorp/logutils v1.0.0
 	github.com/spf13/cobra v1.7.0
-	github.com/usvc/go-semver v0.0.16
+	github.com/spf13/pflag v1.0.5
+	github.com/thediveo/enumflag v0.10.1
+	golang.org/x/mod v0.6.0
 )
 
 require (
@@ -24,7 +27,6 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
