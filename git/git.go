@@ -12,19 +12,19 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
-type FindLastTagParams struct{
+type FindLastTagParams struct {
 	RepositoryPath string
-	RemoteName string
-	GitlabToken string
-	FetchTags bool
+	RemoteName     string
+	GitlabToken    string
+	FetchTags      bool
 }
 
 func FindLastTag(params FindLastTagParams) (string, error) {
 	log.Printf(
-		"[DEBUG] FindLastTag(RepositoryPath=%v, RemoteName=%v, GitlabToken=%v, FetchTags=%v)\n", 
-		params.RepositoryPath, 
+		"[DEBUG] FindLastTag(RepositoryPath=%v, RemoteName=%v, GitlabToken=%v, FetchTags=%v)\n",
+		params.RepositoryPath,
 		params.RemoteName,
-		params.GitlabToken, 
+		params.GitlabToken,
 		params.FetchTags,
 	)
 
@@ -74,8 +74,8 @@ func getAuth(accessToken string) transport.AuthMethod {
 	return nil
 }
 
-// Fetch all tags 
-func fetchTags(repo *git.Repository, remoteName string, accessToken string) (error) {
+// Fetch all tags
+func fetchTags(repo *git.Repository, remoteName string, accessToken string) error {
 	fetchOptions := &git.FetchOptions{
 		RemoteName: "origin",
 		RefSpecs:   []config.RefSpec{"+refs/tags/*:refs/tags/*"},
@@ -97,7 +97,7 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 	}
 
 	var mostRecentTag *plumbing.Reference
-	var mostRecentCommitTime time.Time 
+	var mostRecentCommitTime time.Time
 	err = tagRefs.ForEach(func(ref *plumbing.Reference) error {
 		log.Printf("[DEBUG] findMostRecentTagForCommit tagRefs.ForEach(ref=%v)\n", ref)
 		if ref.Type() != plumbing.SymbolicReference {

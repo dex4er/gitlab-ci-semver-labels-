@@ -38,17 +38,17 @@ func rootCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	filter := &logutils.LevelFilter{
-		Levels: []logutils.LogLevel{"DEBUG", "ERROR"},
+		Levels:   []logutils.LogLevel{"DEBUG", "ERROR"},
 		MinLevel: logutils.LogLevel(logLevel),
-		Writer: os.Stderr,
+		Writer:   os.Stderr,
 	}
 	log.SetOutput(filter)
 
 	tag, err := git.FindLastTag(git.FindLastTagParams{
 		RepositoryPath: cmd.Flag("work-tree").Value.String(),
-		RemoteName: cmd.Flag("remote-name").Value.String(),
-		GitlabToken: os.Getenv(cmd.Flag("gitlab-token-env").Value.String()),
-		FetchTags: cmd.Flag("fetch-tags").Value.String() == "true",
+		RemoteName:     cmd.Flag("remote-name").Value.String(),
+		GitlabToken:    os.Getenv(cmd.Flag("gitlab-token-env").Value.String()),
+		FetchTags:      cmd.Flag("fetch-tags").Value.String() == "true",
 	})
 
 	if err != nil {
