@@ -1,0 +1,30 @@
+project_name: gitlab-ci-semver-labels
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - binary: gitlab-ci-semver-labels
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+    goos:
+      - darwin
+      - linux
+      - windows
+    flags:
+      - -trimpath
+    ldflags:
+      - -s
+      - -w
+      - -X github.com/dex4er/gitlab-ci-semver-labels={{ .Version }}
+
+archives:
+  - name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    format: binary
+
+checksum:
+  name_template: checksums.txt
