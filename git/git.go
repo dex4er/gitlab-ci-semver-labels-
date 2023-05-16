@@ -10,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"golang.org/x/mod/semver"
 )
 
 type FindLastTagParams struct {
@@ -105,16 +106,22 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 			if err != nil {
 				return err
 			}
-			if mostRecentTag == nil {
-				mostRecentTag = ref
-				mostRecentCommitTime = tagCommitObj.Committer.When
-			} else {
-				commitTime := tagCommitObj.Committer.When
-
-				if commitTime.After(mostRecentCommitTime) {
+			tag := ref.Name().Short()
+			log.Printf("[DEBUG] findMostRecentTagForCommit tag=%v\n", tag)
+			if semver.IsValid(tag) {
+				if mostRecentTag == nil {
 					mostRecentTag = ref
-					mostRecentCommitTime = commitTime
+					mostRecentCommitTime = tagCommitObj.Committer.When
+				} else {
+					commitTime := tagCommitObj.Committer.When
+
+					if commitTime.After(mostRecentCommitTime) {
+						mostRecentTag = ref
+						mostRecentCommitTime = commitTime
+					}
 				}
+			} else {
+				log.Printf("[WARNING] %v is not a valid semver\n", tag)
 			}
 		}
 		return nil

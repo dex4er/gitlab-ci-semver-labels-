@@ -38,7 +38,7 @@ func rootCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	filter := &logutils.LevelFilter{
-		Levels:   []logutils.LogLevel{"DEBUG", "ERROR"},
+		Levels:   []logutils.LogLevel{"DEBUG", "WARNING", "ERROR"},
 		MinLevel: logutils.LogLevel(logLevel),
 		Writer:   os.Stderr,
 	}
