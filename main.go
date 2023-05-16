@@ -22,7 +22,7 @@ func main() {
 	}
 
 	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
-	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name of the variable with Gitlab token")
+	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "`VAR` name for environment variable with Gitlab token")
 	rootCmd.Flags().Bool("fetch-tags", true, "fetch tags from git repo")
 
 	if err := rootCmd.Execute(); err != nil {
