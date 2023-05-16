@@ -10,7 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"golang.org/x/mod/semver"
+	"github.com/usvc/go-semver"
 )
 
 type FindLastTagParams struct {

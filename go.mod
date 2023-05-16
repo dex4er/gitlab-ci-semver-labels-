@@ -6,7 +6,7 @@ require (
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/hashicorp/logutils v1.0.0
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/mod v0.6.0
+	github.com/usvc/go-semver v0.0.16
 )
 
 require (
