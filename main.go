@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/hashicorp/logutils"
 	"github.com/spf13/cobra"
 	"github.com/thediveo/enumflag"
+	"github.com/xanzy/go-gitlab"
 
 	"github.com/dex4er/gitlab-ci-semver-labels/git"
 	"github.com/dex4er/gitlab-ci-semver-labels/semver"
@@ -124,14 +127,45 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// gl, err := gitlab.NewClient(gitlabToken)
-	// if err != nil {
-	// 	log.Fatalf("[ERROR] Failed to create client: %v\n", err)
-	// }
+	mergeRequestLabels := os.Getenv("CI_MERGE_REQUEST_LABELS")
 
-	// projectId = os.Getenv("")
+	if mergeRequestLabels == "" {
+		commitMessage := os.Getenv("CI_COMMIT_MESSAGE")
 
-	// gl.MergeRequests.GetMergeRequest()
+		if !strings.HasPrefix(commitMessage, "Merge branch ") {
+			log.Println("[DEBUG] Not a merge commit")
+			return nil
+		}
+
+		re := regexp.MustCompile(`See merge request \!(\d+)`)
+		matches := re.FindStringSubmatch(commitMessage)
+
+		if len(matches) <= 1 {
+			fmt.Println("[DEBUG] Merge request not found")
+			return nil
+		}
+
+		mergeRequest := matches[1]
+		fmt.Println("[DEBUG] Merge request:", mergeRequest)
+
+		gl, err := gitlab.NewClient(gitlabToken)
+		if err != nil {
+			log.Fatalf("[ERROR] Failed to create client: %v\n", err)
+		}
+
+		opt := &gitlab.GetMergeRequestsOptions{}
+		mr, _, err := gl.MergeRequests.GetMergeRequest(os.Getenv("CI_PROJECT_ID"), 1, opt)
+
+		if err != nil {
+			log.Fatalf("[ERROR] %v\n", err)
+		}
+
+		log.Printf("[DEBUG] Found merge request: %v\n", mr)
+
+		labels := mr.Labels
+
+		log.Printf("[DEBUG] Labels: %v\n", labels)
+	}
 
 	return nil
 }
