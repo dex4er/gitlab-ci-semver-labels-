@@ -54,6 +54,8 @@ func main() {
 	rootCmd.Flags().Bool("fetch-tags", true, "fetch tags from git repo")
 	rootCmd.Flags().Bool("current", false, "show current version")
 	rootCmd.Flags().VarP(enumflag.New(&bumpmode, "bump", BumpModeIds, enumflag.EnumCaseInsensitive), "bump", "b", "bump version without checking labels: false, current, initial, prerelease, patch, minor, major")
+	rootCmd.Flags().String("initial-label", "(?i)(initial.release|semver-initial)", "`REGEXP` for initial release label")
+	rootCmd.Flags().String("prerelease-label", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
@@ -100,6 +102,7 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 		log.Printf("[DEBUG] Bump mode %v\n", bumpmode)
 
 		var ver string
+
 		if bumpmode == Initial {
 			ver = "0.0.0"
 		} else if bumpmode == Prerelease {
@@ -123,6 +126,7 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 				log.Fatalf("[ERROR] Can't bump tag: %v\n", err)
 			}
 		}
+
 		fmt.Println(ver)
 		return nil
 	}
@@ -137,8 +141,8 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 
-		re := regexp.MustCompile(`See merge request \!(\d+)`)
-		matches := re.FindStringSubmatch(commitMessage)
+		re_mr := regexp.MustCompile(`See merge request \!(\d+)`)
+		matches := re_mr.FindStringSubmatch(commitMessage)
 
 		if len(matches) <= 1 {
 			fmt.Println("[DEBUG] Merge request not found")
@@ -165,6 +169,31 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 		labels := mr.Labels
 
 		log.Printf("[DEBUG] Labels: %v\n", labels)
+
+		re_initial := regexp.MustCompile(cmd.Flag("initial-label").Value.String())
+		re_prerelease := regexp.MustCompile(cmd.Flag("prerelease-label").Value.String())
+
+		var ver string
+
+		for _, label := range labels {
+			if re_initial.MatchString(label) {
+				if ver != "" {
+					log.Fatalln("[ERROR] More than 1 semver label")
+				}
+				ver = "0.0.0"
+			}
+			if re_prerelease.MatchString(label) {
+				if ver != "" {
+					log.Fatalln("[ERROR] More than 1 semver label")
+				}
+				ver, err = semver.BumpPrerelease(tag)
+				if err != nil {
+					log.Fatalf("[ERROR] Can't bump tag: %v\n", err)
+				}
+			}
+		}
+
+		fmt.Println(ver)
 	}
 
 	return nil
