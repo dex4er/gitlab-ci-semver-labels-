@@ -76,7 +76,7 @@ jobs:
 
       - name: Test binary
         run: |
-          ./gitlab-ci-semver-labels --current
+          ./gitlab-ci-semver-labels --bump initial
 
       - name: Build image
         run: make image PLATFORM="${{ matrix.platform }}"
