@@ -84,7 +84,10 @@ func main() {
 	rootCmd.Flags().StringVarP(&params.Dotenv, "dotenv", "d", "", "write dotenv format to `FILE`")
 	rootCmd.Flags().BoolVarP(&params.FetchTags, "fetch-tags", "f", true, "fetch tags from git repo")
 	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
-	rootCmd.Flags().StringVar(&params.InitialLabel, "initial-label", "(?i)(initial.release|semver-initial)", "`REGEXP` for initial release label")
+	rootCmd.Flags().StringVar(&params.InitialLabel, "initial-label", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
+	rootCmd.Flags().StringVar(&params.MajorLabel, "major-label", "(?i)(major.release|breaking.release|semver.major|semver.breaking)", "`REGEXP` for major (breaking) release label")
+	rootCmd.Flags().StringVar(&params.MinorLabel, "minor-label", "(?i)(minor.release|feature.release|semver.initial|semver.feature)", "`REGEXP` for minor (feature) release label")
+	rootCmd.Flags().StringVar(&params.PatchLabel, "patch-label", "(?i)(patch.release|fix.release|semver.initial|semver.fix)", "`REGEXP` for patch (fix) release label")
 	rootCmd.Flags().StringVar(&params.PrereleaseLabel, "prerelease-label", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
 	rootCmd.Flags().StringVarP(&params.RemoteName, "remote-name", "r", "origin", "`NAME` of git remote")
 	rootCmd.Flags().StringVarP(&params.WorkTree, "work-tree", "C", ".", "`DIR` to be used for git operations")
@@ -125,6 +128,9 @@ type handleSemverLabelsParams struct {
 	FetchTags       bool
 	GitlabTokenEnv  string
 	InitialLabel    string
+	MajorLabel      string
+	MinorLabel      string
+	PatchLabel      string
 	PrereleaseLabel string
 	RemoteName      string
 	WorkTree        string
@@ -222,6 +228,9 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		log.Println("[DEBUG] Labels:", labels)
 
 		re_initial := regexp.MustCompile(params.InitialLabel)
+		re_major := regexp.MustCompile(params.MajorLabel)
+		re_minor := regexp.MustCompile(params.MinorLabel)
+		re_patch := regexp.MustCompile(params.PatchLabel)
 		re_prerelease := regexp.MustCompile(params.PrereleaseLabel)
 
 		var ver string
@@ -232,6 +241,33 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 					return errors.New("more than 1 semver label")
 				}
 				ver = initialVersion
+			}
+			if re_major.MatchString(label) {
+				if ver != "" {
+					return errors.New("more than 1 semver label")
+				}
+				ver, err = semver.BumpMajor(tag)
+				if err != nil {
+					return fmt.Errorf("cannot bump tag: %w", err)
+				}
+			}
+			if re_minor.MatchString(label) {
+				if ver != "" {
+					return errors.New("more than 1 semver label")
+				}
+				ver, err = semver.BumpMinor(tag)
+				if err != nil {
+					return fmt.Errorf("cannot bump tag: %w", err)
+				}
+			}
+			if re_patch.MatchString(label) {
+				if ver != "" {
+					return errors.New("more than 1 semver label")
+				}
+				ver, err = semver.BumpPatch(tag)
+				if err != nil {
+					return fmt.Errorf("cannot bump tag: %w", err)
+				}
 			}
 			if re_prerelease.MatchString(label) {
 				if ver != "" {
@@ -244,7 +280,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			}
 		}
 
-		fmt.Println(ver)
+		return printVersion(ver, params.Dotenv)
 	}
 
 	return nil
