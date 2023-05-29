@@ -1,5 +1,7 @@
 project_name: gitlab-ci-semver-labels
 
+force_token: github
+
 before:
   hooks:
     - go mod download
@@ -17,10 +19,6 @@ builds:
       - windows
     flags:
       - -trimpath
-    ldflags:
-      - -s
-      - -w
-      - -X github.com/dex4er/gitlab-ci-semver-labels={{ .Version }}
 
 archives:
   - name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
@@ -28,3 +26,6 @@ archives:
 
 checksum:
   name_template: checksums.txt
+
+changelog:
+  use: github

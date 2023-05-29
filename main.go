@@ -16,7 +16,7 @@ import (
 	"github.com/dex4er/gitlab-ci-semver-labels/semver"
 )
 
-var VERSION = "0.0.0"
+var version = "0.0.0"
 
 type BumpMode enumflag.Flag
 
@@ -44,7 +44,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:     "gitlab-ci-semver-labels",
 		Short:   "Bump the semver for a Gitlab CI project",
-		Version: VERSION,
+		Version: version,
 		RunE:    rootCmdRun,
 	}
 

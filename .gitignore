@@ -1,4 +1,4 @@
-/gitlab-ci-semver-labels
+/gitlab-ci-semver-labels*
 
 dist/
 tmp/
