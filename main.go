@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/hashicorp/logutils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 	"github.com/thediveo/enumflag"
 	"github.com/xanzy/go-gitlab"
 
@@ -16,119 +18,168 @@ import (
 	"github.com/dex4er/gitlab-ci-semver-labels/semver"
 )
 
-var version = "0.0.0"
+var version = "dev"
 
-type BumpMode enumflag.Flag
+const initialVersion = "0.0.0"
+
+type SemverBump enumflag.Flag
 
 const (
-	False BumpMode = iota
-	Initial
-	Prerelease
-	Patch
-	Minor
-	Major
+	BumpFalse SemverBump = iota
+	BumpInitial
+	BumpPrerelease
+	BumpPatch
+	BumpMinor
+	BumpMajor
 )
 
-var BumpModeIds = map[BumpMode][]string{
-	False:      {"false"},
-	Initial:    {"initial"},
-	Prerelease: {"prerelease"},
-	Patch:      {"patch"},
-	Minor:      {"minor"},
-	Major:      {"major"},
+var SemverBumpIds = map[SemverBump][]string{
+	BumpFalse:      {"false"},
+	BumpInitial:    {"initial"},
+	BumpPrerelease: {"prerelease"},
+	BumpPatch:      {"patch"},
+	BumpMinor:      {"minor"},
+	BumpMajor:      {"major"},
 }
-
-var bumpmode BumpMode
 
 func main() {
-	rootCmd := &cobra.Command{
-		Use:     "gitlab-ci-semver-labels",
-		Short:   "Bump the semver for a Gitlab CI project",
-		Version: version,
-		RunE:    rootCmdRun,
-	}
-
-	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
-	rootCmd.Flags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
-	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
-	rootCmd.Flags().Bool("fetch-tags", true, "fetch tags from git repo")
-	rootCmd.Flags().Bool("current", false, "show current version")
-	rootCmd.Flags().VarP(enumflag.New(&bumpmode, "bump", BumpModeIds, enumflag.EnumCaseInsensitive), "bump", "b", "bump version without checking labels: false, current, initial, prerelease, patch, minor, major")
-	rootCmd.Flags().String("initial-label", "(?i)(initial.release|semver-initial)", "`REGEXP` for initial release label")
-	rootCmd.Flags().String("prerelease-label", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
-
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func rootCmdRun(cmd *cobra.Command, args []string) error {
 	logLevel := os.Getenv("LOGLEVEL")
 	if logLevel == "" {
 		logLevel = "ERROR"
 	}
 
 	filter := &logutils.LevelFilter{
-		Levels:   []logutils.LogLevel{"DEBUG", "WARNING", "ERROR"},
+		Levels:   []logutils.LogLevel{"TRACE", "DEBUG", "WARNING", "ERROR"},
 		MinLevel: logutils.LogLevel(logLevel),
 		Writer:   os.Stderr,
 	}
 	log.SetOutput(filter)
 
-	gitlabToken := os.Getenv(cmd.Flag("gitlab-token-env").Value.String())
+	params := handleSemverLabelsParams{}
+
+	genMarkdown := ""
+
+	rootCmd := &cobra.Command{
+		Use:     "gitlab-ci-semver-labels",
+		Short:   "Bump the semver for a Gitlab CI project",
+		Version: "v" + version,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if genMarkdown != "" {
+				if err := doc.GenMarkdownTree(cmd, genMarkdown); err != nil {
+					fmt.Println("Error:", err)
+					os.Exit(2)
+				}
+				return nil
+			}
+			if err := handleSemverLabels(params); err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+
+	rootCmd.Flags().VarP(enumflag.New(&params.BumpMode, "bump", SemverBumpIds, enumflag.EnumCaseInsensitive), "bump", "b", "`BUMP` version without checking labels: false, current, initial, prerelease, patch, minor, major")
+	rootCmd.Flags().BoolVarP(&params.Current, "current", "c", false, "show current version")
+	rootCmd.Flags().StringVarP(&params.Dotenv, "dotenv", "d", "", "write dotenv format to `FILE`")
+	rootCmd.Flags().BoolVarP(&params.FetchTags, "fetch-tags", "f", true, "fetch tags from git repo")
+	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
+	rootCmd.Flags().StringVar(&params.InitialLabel, "initial-label", "(?i)(initial.release|semver-initial)", "`REGEXP` for initial release label")
+	rootCmd.Flags().StringVar(&params.PrereleaseLabel, "prerelease-label", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
+	rootCmd.Flags().StringVarP(&params.RemoteName, "remote-name", "r", "origin", "`NAME` of git remote")
+	rootCmd.Flags().StringVarP(&params.WorkTree, "work-tree", "C", ".", "`DIR` to be used for git operations")
+
+	rootCmd.Flags().StringVar(&genMarkdown, "gen-markdown", "", "Generate Markdown documentation")
+
+	if err := rootCmd.Flags().MarkHidden("gen-markdown"); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func printVersion(ver string, dotenv string) error {
+	if dotenv != "" {
+		file, err := os.Create(dotenv)
+		if err != nil {
+			return fmt.Errorf("cannot create file: %w", err)
+		}
+		defer file.Close()
+		_, err = file.WriteString(fmt.Sprintf("version=%s\n", ver))
+		if err != nil {
+			return fmt.Errorf("cannot write to file: %w", err)
+		}
+		log.Println("[DEBUG] Written to file:", dotenv)
+	}
+	_, err := fmt.Println(ver)
+	return err
+}
+
+type handleSemverLabelsParams struct {
+	BumpMode        SemverBump
+	Current         bool
+	Dotenv          string
+	FetchTags       bool
+	GitlabTokenEnv  string
+	InitialLabel    string
+	PrereleaseLabel string
+	RemoteName      string
+	WorkTree        string
+}
+
+func handleSemverLabels(params handleSemverLabelsParams) error {
+	gitlabToken := os.Getenv(params.GitlabTokenEnv)
 
 	tag, err := git.FindLastTag(git.FindLastTagParams{
-		RepositoryPath: cmd.Flag("work-tree").Value.String(),
-		RemoteName:     cmd.Flag("remote-name").Value.String(),
+		RepositoryPath: params.WorkTree,
+		RemoteName:     params.RemoteName,
 		GitlabToken:    gitlabToken,
-		FetchTags:      cmd.Flag("fetch-tags").Value.String() == "true",
+		FetchTags:      params.FetchTags,
 	})
 
 	if err != nil {
-		log.Fatalf("[ERROR] Can't find the last git tag: %v\n", err)
+		return fmt.Errorf("cannot find the last git tag: %w", err)
+	}
+
+	if params.BumpMode == BumpInitial {
+		if tag != "" {
+			return errors.New("semver is already initialized")
+		}
+		fmt.Println(initialVersion)
+		return nil
 	}
 
 	if tag == "" {
-		log.Println("[DEBUG] No tag found")
-		return nil
+		return errors.New("no tag found")
 	}
 
-	if cmd.Flag("current").Value.String() == "true" {
-		fmt.Println(tag)
-		return nil
+	if params.Current {
+		_, err := fmt.Println(tag)
+		return err
 	}
 
-	if bumpmode != False {
-		log.Printf("[DEBUG] Bump mode %v\n", bumpmode)
+	if params.BumpMode != BumpFalse {
+		log.Println("[DEBUG] Bump mode:", SemverBumpIds[params.BumpMode][0])
 
 		var ver string
 
-		if bumpmode == Initial {
-			ver = "0.0.0"
-		} else if bumpmode == Prerelease {
+		if params.BumpMode == BumpPrerelease {
 			ver, err = semver.BumpPrerelease(tag)
-			if err != nil {
-				log.Fatalf("[ERROR] Can't bump tag: %v\n", err)
-			}
-		} else if bumpmode == Patch {
+		} else if params.BumpMode == BumpPatch {
 			ver, err = semver.BumpPatch(tag)
-			if err != nil {
-				log.Fatalf("[ERROR] Can't bump tag: %v\n", err)
-			}
-		} else if bumpmode == Minor {
+		} else if params.BumpMode == BumpMinor {
 			ver, err = semver.BumpMinor(tag)
-			if err != nil {
-				log.Fatalf("[ERROR] Can't bump tag: %v\n", err)
-			}
-		} else if bumpmode == Major {
+		} else if params.BumpMode == BumpMajor {
 			ver, err = semver.BumpMajor(tag)
-			if err != nil {
-				log.Fatalf("[ERROR] Can't bump tag: %v\n", err)
-			}
+		}
+		if err != nil {
+			return fmt.Errorf("cannot bump tag: %w", err)
 		}
 
-		fmt.Println(ver)
-		return nil
+		return printVersion(ver, params.Dotenv)
 	}
 
 	mergeRequestLabels := os.Getenv("CI_MERGE_REQUEST_LABELS")
@@ -137,7 +188,7 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 		commitMessage := os.Getenv("CI_COMMIT_MESSAGE")
 
 		if !strings.HasPrefix(commitMessage, "Merge branch ") {
-			log.Println("[DEBUG] Not a merge commit")
+			log.Println("[WARNING] Not a merge commit")
 			return nil
 		}
 
@@ -145,50 +196,50 @@ func rootCmdRun(cmd *cobra.Command, args []string) error {
 		matches := re_mr.FindStringSubmatch(commitMessage)
 
 		if len(matches) <= 1 {
-			fmt.Println("[DEBUG] Merge request not found")
+			log.Println("[WARNING] Merge request not found")
 			return nil
 		}
 
 		mergeRequest := matches[1]
-		fmt.Println("[DEBUG] Merge request:", mergeRequest)
+		log.Println("[DEBUG] Merge request:", mergeRequest)
 
 		gl, err := gitlab.NewClient(gitlabToken)
 		if err != nil {
-			log.Fatalf("[ERROR] Failed to create client: %v\n", err)
+			return fmt.Errorf("failed to create client: %w", err)
 		}
 
 		opt := &gitlab.GetMergeRequestsOptions{}
 		mr, _, err := gl.MergeRequests.GetMergeRequest(os.Getenv("CI_PROJECT_ID"), 1, opt)
 
 		if err != nil {
-			log.Fatalf("[ERROR] %v\n", err)
+			return fmt.Errorf("failed to get information about merge request: %w", err)
 		}
 
-		log.Printf("[DEBUG] Found merge request: %v\n", mr)
+		log.Println("[DEBUG] Found merge request:", mr)
 
 		labels := mr.Labels
 
-		log.Printf("[DEBUG] Labels: %v\n", labels)
+		log.Println("[DEBUG] Labels:", labels)
 
-		re_initial := regexp.MustCompile(cmd.Flag("initial-label").Value.String())
-		re_prerelease := regexp.MustCompile(cmd.Flag("prerelease-label").Value.String())
+		re_initial := regexp.MustCompile(params.InitialLabel)
+		re_prerelease := regexp.MustCompile(params.PrereleaseLabel)
 
 		var ver string
 
 		for _, label := range labels {
 			if re_initial.MatchString(label) {
 				if ver != "" {
-					log.Fatalln("[ERROR] More than 1 semver label")
+					return errors.New("more than 1 semver label")
 				}
-				ver = "0.0.0"
+				ver = initialVersion
 			}
 			if re_prerelease.MatchString(label) {
 				if ver != "" {
-					log.Fatalln("[ERROR] More than 1 semver label")
+					return errors.New("more than 1 semver label")
 				}
 				ver, err = semver.BumpPrerelease(tag)
 				if err != nil {
-					log.Fatalf("[ERROR] Can't bump tag: %v\n", err)
+					return fmt.Errorf("cannot bump tag: %w", err)
 				}
 			}
 		}

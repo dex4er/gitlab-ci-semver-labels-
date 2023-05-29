@@ -1,6 +1,7 @@
 package semver
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -26,11 +27,11 @@ func BumpPrerelease(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[DEBUG] BumpPrerelease(version=%v)\n", version)
+	log.Printf("[TRACE] BumpPrerelease(version=%v)\n", version)
 
 	newVer, err := ver.SetPrerelease(incrementNumberAsString(ver.Prerelease()))
 	if err != nil {
-		log.Fatalf("[ERROR] Can't bump semver: %v\n", err)
+		return "", fmt.Errorf("cannot bump semver: %w", err)
 	}
 
 	return newVer.String(), nil
@@ -41,7 +42,7 @@ func BumpPatch(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[DEBUG] BumpPatch(version=%v)\n", version)
+	log.Printf("[TRACE] BumpPatch(version=%v)\n", version)
 
 	newVer := ver.IncPatch()
 
@@ -53,7 +54,7 @@ func BumpMinor(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[DEBUG] BumpMinor(version=%v)\n", version)
+	log.Printf("[TRACE] BumpMinor(version=%v)\n", version)
 
 	newVer := ver.IncMinor()
 
@@ -65,7 +66,7 @@ func BumpMajor(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[DEBUG] BumpMajor(version=%v)\n", version)
+	log.Printf("[TRACE] BumpMajor(version=%v)\n", version)
 
 	newVer := ver.IncMajor()
 

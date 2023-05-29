@@ -23,7 +23,7 @@ type FindLastTagParams struct {
 
 func FindLastTag(params FindLastTagParams) (string, error) {
 	log.Printf(
-		"[DEBUG] FindLastTag(RepositoryPath=%v, RemoteName=%v, GitlabToken=%v, FetchTags=%v)\n",
+		"[TRACE] FindLastTag(RepositoryPath=%v, RemoteName=%v, GitlabToken=%v, FetchTags=%v)\n",
 		params.RepositoryPath,
 		params.RemoteName,
 		params.GitlabToken,
@@ -92,7 +92,7 @@ func fetchTags(repo *git.Repository, remoteName string, accessToken string) erro
 
 // Find the most recent tag that points to the given commit object
 func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) (string, error) {
-	log.Printf("[DEBUG] findMostRecentTagForCommit(repo=%v, commitObj=%v)\n", repo, commitObj)
+	log.Printf("[TRACE] findMostRecentTagForCommit(repo=%v, commitObj=%v)\n", repo, commitObj)
 	tagRefs, err := repo.Tags()
 	if err != nil {
 		return "", err
@@ -101,14 +101,14 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 	var mostRecentTag *plumbing.Reference
 	var mostRecentCommitTime time.Time
 	err = tagRefs.ForEach(func(ref *plumbing.Reference) error {
-		log.Printf("[DEBUG] findMostRecentTagForCommit tagRefs.ForEach(ref=%v)\n", ref)
+		log.Printf("[TRACE] findMostRecentTagForCommit tagRefs.ForEach(ref=%v)\n", ref)
 		if ref.Type() != plumbing.SymbolicReference {
 			tagCommitObj, err := repo.CommitObject(ref.Hash())
 			if err != nil {
 				return err
 			}
 			tag := ref.Name().Short()
-			log.Printf("[DEBUG] findMostRecentTagForCommit tag=%v\n", tag)
+			log.Printf("[TRACE] findMostRecentTagForCommit tag=%v\n", tag)
 			if semver.IsValid(tag) {
 				if mostRecentTag == nil {
 					mostRecentTag = ref
