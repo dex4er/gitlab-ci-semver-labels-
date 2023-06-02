@@ -6,6 +6,7 @@ tmp/
 .cache/
 
 /.env*
+/version.env
 
 *.exe
 *.exe~

@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-$env:BIN = "gitlab-ci-semver-labels"
+$env:NAME = "gitlab-ci-semver-labels"
 
 ## Read .env
 if (Test-Path -Path ".env" -PathType Leaf) {
@@ -43,8 +43,9 @@ else {
   $env:EXE = ""
 }
 
+if (-not $env:BIN) { $env:BIN = "$env:NAME$env:EXE" }
+
 if ($env:OS -eq "Windows_NT") {
-  if (-not $env:BIN) { $env:BIN = "gitlab-download-release.exe" }
   if ($env:LOCALAPPDATA) {
     if (-not $env:BINDIR) { $env:BINDIR = "$env:LOCALAPPDATA\Microsoft\WindowsApps" }
   }
@@ -53,7 +54,6 @@ if ($env:OS -eq "Windows_NT") {
   }
 }
 else {
-  if (-not $env:BIN) { $env:BIN = "gitlab-download-release" }
   if (Test-Path "$env:HOME\.local\bin") {
     if (-not $env:BINDIR) { $env:BINDIR = "$env:HOME\.local\bin" }
   }
@@ -149,17 +149,17 @@ function Invoke-Target-Goreleaser {
 
 ## TARGET install Build and install app binary
 function Invoke-Target-Install {
-  if (-not (Test-Path -Path "$env:BIN$env:EXE" -PathType Leaf)) {
+  if (-not (Test-Path -Path "$env:BIN" -PathType Leaf)) {
     Invoke-Target-Build
   }
   Write-Target "install"
-  Invoke-ExpressionWithEcho "Copy-Item -Path '$env:BIN$env:EXE' -Destination $env:BINDIR -Force"
+  Invoke-ExpressionWithEcho "Copy-Item -Path '$env:BIN' -Destination $env:BINDIR -Force"
 }
 
 ## TARGET uninstall Uninstall app binary
 function Invoke-Target-Uninstall {
   Write-Target "uninstall"
-  $path = Join-Path $env:BINDIR "$env:BIN$env:EXE"
+  $path = Join-Path $env:BINDIR "$env:BIN"
   Invoke-ExpressionWithEcho -Command "Remove-Item $path -Force -ErrorAction SilentlyContinue"
 }
 
@@ -184,7 +184,7 @@ function Invoke-Target-Upgrade {
 ## TARGET clean Clean working directory
 function Invoke-Target-Clean {
   Write-Target "clean"
-  Invoke-ExpressionWithEcho -Command "Remove-Item '$env:BIN$env:EXE' -Force -ErrorAction SilentlyContinue"
+  Invoke-ExpressionWithEcho -Command "Remove-Item '$env:BIN' -Force -ErrorAction SilentlyContinue"
   Invoke-ExpressionWithEcho -Command "Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue"
 }
 
