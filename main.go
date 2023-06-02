@@ -79,7 +79,8 @@ func main() {
 
 	rootCmd.Flags().VarP(enumflag.New(&params.BumpMode, "bump", SemverBumpIds, enumflag.EnumCaseInsensitive), "bump", "b", "`BUMP` version without checking labels: false, current, initial, prerelease, patch, minor, major")
 	rootCmd.Flags().BoolVarP(&params.Current, "current", "c", false, "show current version")
-	rootCmd.Flags().StringVarP(&params.Dotenv, "dotenv", "d", "", "write dotenv format to `FILE`")
+	rootCmd.Flags().StringVarP(&params.DotenvFile, "dotenv-file", "d", "", "write dotenv format to `FILE`")
+	rootCmd.Flags().StringVarP(&params.DotenvVar, "dotenv-var", "D", "version", "variable `NAME` in dotenv file")
 	rootCmd.Flags().BoolVarP(&params.FetchTags, "fetch-tags", "f", true, "fetch tags from git repo")
 	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringVar(&params.InitialLabel, "initial-label", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
@@ -103,18 +104,18 @@ func main() {
 	}
 }
 
-func printVersion(ver string, dotenv string) error {
-	if dotenv != "" {
-		file, err := os.Create(dotenv)
+func printVersion(ver string, dotenvFile string, dotenvVar string) error {
+	if dotenvFile != "" {
+		file, err := os.Create(dotenvFile)
 		if err != nil {
 			return fmt.Errorf("cannot create file: %w", err)
 		}
 		defer file.Close()
-		_, err = file.WriteString(fmt.Sprintf("version=%s\n", ver))
+		_, err = file.WriteString(fmt.Sprintf("%s=%s\n", dotenvVar, ver))
 		if err != nil {
 			return fmt.Errorf("cannot write to file: %w", err)
 		}
-		log.Println("[DEBUG] Written to file:", dotenv)
+		log.Println("[DEBUG] Written to file:", dotenvFile)
 	}
 	_, err := fmt.Println(ver)
 	return err
@@ -123,7 +124,8 @@ func printVersion(ver string, dotenv string) error {
 type handleSemverLabelsParams struct {
 	BumpMode        SemverBump
 	Current         bool
-	Dotenv          string
+	DotenvFile      string
+	DotenvVar       string
 	FetchTags       bool
 	GitlabTokenEnv  string
 	InitialLabel    string
@@ -185,7 +187,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			return fmt.Errorf("cannot bump tag: %w", err)
 		}
 
-		return printVersion(ver, params.Dotenv)
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
 	}
 
 	mergeRequestLabels := os.Getenv("CI_MERGE_REQUEST_LABELS")
@@ -280,7 +282,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			}
 		}
 
-		return printVersion(ver, params.Dotenv)
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
 	}
 
 	return nil
