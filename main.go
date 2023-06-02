@@ -150,18 +150,6 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		return fmt.Errorf("cannot find the last git tag: %w", err)
 	}
 
-	if params.BumpMode == BumpInitial {
-		if tag != "" {
-			return errors.New("semver is already initialized")
-		}
-		fmt.Println(initialVersion)
-		return nil
-	}
-
-	if tag == "" {
-		return errors.New("no tag found")
-	}
-
 	if params.Current {
 		_, err := fmt.Println(tag)
 		return err
@@ -169,6 +157,18 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 
 	if params.BumpMode != BumpFalse {
 		log.Println("[DEBUG] Bump mode:", SemverBumpIds[params.BumpMode][0])
+
+		if params.BumpMode == BumpInitial {
+			if tag != "" {
+				return errors.New("semver is already initialized")
+			}
+			fmt.Println(initialVersion)
+			return nil
+		}
+
+		if tag == "" {
+			return errors.New("no tag found")
+		}
 
 		var ver string
 
