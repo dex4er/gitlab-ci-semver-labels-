@@ -20,8 +20,6 @@ import (
 
 var version = "dev"
 
-const initialVersion = "0.0.0"
-
 type SemverBump enumflag.Flag
 
 const (
@@ -85,6 +83,7 @@ func main() {
 	rootCmd.Flags().BoolVarP(&params.FetchTags, "fetch-tags", "f", true, "fetch tags from git repo")
 	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringVar(&params.InitialLabel, "initial-label", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
+	rootCmd.Flags().StringVar(&params.InitialVersion, "initial-version", "0.0.0", "initial `VERSION` for initial release")
 	rootCmd.Flags().StringVar(&params.MajorLabel, "major-label", "(?i)(major.release|breaking.release|semver.major|semver.breaking)", "`REGEXP` for major (breaking) release label")
 	rootCmd.Flags().StringVar(&params.MinorLabel, "minor-label", "(?i)(minor.release|feature.release|semver.initial|semver.feature)", "`REGEXP` for minor (feature) release label")
 	rootCmd.Flags().StringVar(&params.PatchLabel, "patch-label", "(?i)(patch.release|fix.release|semver.initial|semver.fix)", "`REGEXP` for patch (fix) release label")
@@ -128,6 +127,7 @@ type handleSemverLabelsParams struct {
 	FetchTags       bool
 	GitlabTokenEnv  string
 	InitialLabel    string
+	InitialVersion  string
 	MajorLabel      string
 	MinorLabel      string
 	PatchLabel      string
@@ -162,7 +162,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			if tag != "" {
 				return errors.New("semver is already initialized")
 			}
-			fmt.Println(initialVersion)
+			fmt.Println(params.InitialVersion)
 			return nil
 		}
 
@@ -240,7 +240,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 				if ver != "" {
 					return errors.New("more than 1 semver label")
 				}
-				ver = initialVersion
+				ver = params.InitialVersion
 			}
 			if re_major.MatchString(label) {
 				if ver != "" {
