@@ -1,6 +1,7 @@
 commit-message-regexp: (?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)
 dotenv-file: ""
 dotenv-var: version
+fail: false
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
 gitlab-url: https://gitlab.com # or $CI_SERVER_URL

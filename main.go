@@ -52,6 +52,7 @@ type handleSemverLabelsParams struct {
 	Current               bool
 	DotenvFile            string
 	DotenvVar             string
+	Fail                  bool
 	FetchTags             bool
 	GitlabTokenEnv        string
 	GitlabUrl             string
@@ -126,6 +127,7 @@ func main() {
 			rootCmdParams.CommitMessageRegexp = viper.GetString("commit-message-regexp")
 			rootCmdParams.DotenvFile = viper.GetString("dotenv-file")
 			rootCmdParams.DotenvVar = viper.GetString("dotenv-var")
+			rootCmdParams.Fail = viper.GetBool("fail")
 			rootCmdParams.FetchTags = viper.GetBool("fetch-tags")
 			rootCmdParams.GitlabTokenEnv = viper.GetString("gitlab-token-env")
 			rootCmdParams.GitlabUrl = viper.GetString("gitlab-url")
@@ -156,7 +158,8 @@ func main() {
 	rootCmd.Flags().BoolVarP(&rootCmdParams.Current, "current", "c", false, "show current version")
 	rootCmd.Flags().StringP("dotenv-file", "d", "", "write dotenv format to `FILE`")
 	rootCmd.Flags().StringP("dotenv-var", "D", "version", "variable `NAME` in dotenv file")
-	rootCmd.Flags().BoolP("fetch-tags", "f", true, "fetch tags from git repo")
+	rootCmd.Flags().BoolP("fail", "f", false, "fail if new labels are not matched")
+	rootCmd.Flags().BoolP("fetch-tags", "T", true, "fetch tags from git repo")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringP("gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")
 	rootCmd.Flags().String("initial-label-regexp", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
@@ -182,6 +185,7 @@ func main() {
 		"commit-message-regexp",
 		"dotenv-file",
 		"dotenv-var",
+		"fail",
 		"fetch-tags",
 		"gitlab-token-env",
 		"gitlab-url",
@@ -428,6 +432,10 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 				return fmt.Errorf("cannot bump tag: %w", err)
 			}
 		}
+	}
+
+	if params.Fail && ver == "" {
+		return errors.New("no label matched")
 	}
 
 	return printVersion(ver, params.DotenvFile, params.DotenvVar)

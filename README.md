@@ -27,13 +27,14 @@ gitlab-ci-semver-labels [flags]
       --bump-minor                       bump minor version without checking labels
       --bump-patch                       bump patch version without checking labels
       --bump-prerelease                  bump prerelease version without checking labels
-      --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)")
+      --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?s)(?:^|\\n)See merge request (?:\\w[\\w.+/-]*)?!(\\d+)")
   -c, --current                          show current version
   -d, --dotenv-file FILE                 write dotenv format to FILE
   -D, --dotenv-var NAME                  variable NAME in dotenv file (default "version")
-  -f, --fetch-tags                       fetch tags from git repo (default true)
+  -f, --fail                             fail if new labels are not matched
+  -T, --fetch-tags                       fetch tags from git repo (default true)
   -t, --gitlab-token-env VAR             name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
-  -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://gitlab.com")
+  -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://git.swf.daimler.com")
   -h, --help                             help for gitlab-ci-semver-labels
       --initial-label-regexp REGEXP      REGEXP for initial release label (default "(?i)(initial.release|semver.initial)")
       --initial-version VERSION          initial VERSION for initial release (default "0.0.0")
@@ -41,7 +42,7 @@ gitlab-ci-semver-labels [flags]
       --minor-label-regexp REGEXP        REGEXP for minor (feature) release label (default "(?i)(minor.release|feature.release|semver.initial|semver.feature)")
       --patch-label-regexp REGEXP        REGEXP for patch (fix) release label (default "(?i)(patch.release|fix.release|semver.initial|semver.fix)")
       --prerelease-label-regexp REGEXP   REGEXP for prerelease label (default "(?i)(pre.?release)")
-  -p, --project PROJECT                  PROJECT with MR
+  -p, --project PROJECT                  PROJECT with MR (default "32781")
   -r, --remote-name NAME                 NAME of git remote (default "origin")
   -v, --version                          version for gitlab-ci-semver-labels
   -C, --work-tree DIR                    DIR to be used for git operations (default ".")
@@ -56,6 +57,7 @@ Some options can be read from the configuration file
 commit-message-regexp: (?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)
 dotenv-file: ""
 dotenv-var: version
+fail: false
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
 gitlab-url: https://gitlab.com # or $CI_SERVER_URL
@@ -92,7 +94,7 @@ stages:
 semver:validate:
   stage: semver
   rules:
-    - if: $CI_MERGE_REQUEST_LABELS && $CI_MERGE_REQUEST_EVENT_TYPE == 'merge_train'
+    - if: $CI_MERGE_REQUEST_LABELS =~ /Release/ && $CI_MERGE_REQUEST_EVENT_TYPE == 'merge_train'
   image:
     name: dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
@@ -100,7 +102,7 @@ semver:validate:
     GIT_DEPTH: 0
   script:
     - gitlab-ci-semver-labels --current || true
-    - gitlab-ci-semver-label
+    - gitlab-ci-semver-label --fail
 
 semver:bump:
   stage: semver
