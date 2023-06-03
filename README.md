@@ -56,8 +56,8 @@ work-tree: .
 ### Environment variables
 
 Any option might be overridden with an environment variable with the name the
-same as an option with the prefix `GITLAB*CI_SEMVER_LABELS*`` and an option name
-with all capital letters with a dash character replaced with underscore. Ie.:
+same as an option with the prefix `GITLAB_CI_SEMVER_LABELS_` and an option name
+with all capital letters with a dash character replaced with an underscore. Ie.:
 
 ```sh
 GITLAB_CI_SEMVER_LABELS_FETCH_TAGS="false"
