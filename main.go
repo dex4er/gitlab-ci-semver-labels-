@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/logutils"
@@ -60,6 +61,7 @@ type handleSemverLabelsParams struct {
 	MinorLabelRegexp      string
 	PatchLabelRegexp      string
 	PrereleaseLabelRegexp string
+	Project               string
 	RemoteName            string
 	WorkTree              string
 }
@@ -134,6 +136,7 @@ func main() {
 			rootCmdParams.PatchLabelRegexp = viper.GetString("patch-label-regexp")
 			rootCmdParams.PrereleaseLabelRegexp = viper.GetString("prerelease-label-regexp")
 			rootCmdParams.RemoteName = viper.GetString("remote-name")
+			rootCmdParams.Project = viper.GetString("project")
 			rootCmdParams.WorkTree = viper.GetString("work-tree")
 
 			if err := handleSemverLabels(rootCmdParams); err != nil {
@@ -162,6 +165,7 @@ func main() {
 	rootCmd.Flags().String("minor-label-regexp", "(?i)(minor.release|feature.release|semver.initial|semver.feature)", "`REGEXP` for minor (feature) release label")
 	rootCmd.Flags().String("patch-label-regexp", "(?i)(patch.release|fix.release|semver.initial|semver.fix)", "`REGEXP` for patch (fix) release label")
 	rootCmd.Flags().String("prerelease-label-regexp", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
+	rootCmd.Flags().StringP("project", "p", os.Getenv("CI_PROJECT_ID"), "`PROJECT` with MR")
 	rootCmd.Flags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
 	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
 
@@ -187,6 +191,7 @@ func main() {
 		"minor-label-regexp",
 		"patch-label-regexp",
 		"prerelease-label-regexp",
+		"project",
 		"remote-name",
 		"work-tree",
 	} {
@@ -227,6 +232,10 @@ func printVersion(ver string, dotenvFile string, dotenvVar string) error {
 
 func handleSemverLabels(params handleSemverLabelsParams) error {
 	gitlabToken := os.Getenv(params.GitlabTokenEnv)
+
+	fmt.Println(gitlabToken)
+
+	log.Println("[DEBUG] Find last tag for remote:", params.RemoteName)
 
 	tag, err := git.FindLastTag(git.FindLastTagParams{
 		RepositoryPath: params.WorkTree,
@@ -306,7 +315,10 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			return nil
 		}
 
-		mergeRequest := matches[1]
+		mergeRequest, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return fmt.Errorf("merge request number is invalid: %w", err)
+		}
 		log.Println("[DEBUG] Merge request:", mergeRequest)
 
 		gl, err := gitlab.NewClient(gitlabToken, gitlab.WithBaseURL(params.GitlabUrl))
@@ -315,7 +327,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		}
 
 		opt := &gitlab.GetMergeRequestsOptions{}
-		mr, _, err := gl.MergeRequests.GetMergeRequest(os.Getenv("CI_PROJECT_ID"), 1, opt)
+		mr, _, err := gl.MergeRequests.GetMergeRequest(params.Project, mergeRequest, opt)
 
 		if err != nil {
 			return fmt.Errorf("failed to get information about merge request: %w", err)
