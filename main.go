@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/logutils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
+	"github.com/spf13/viper"
 	"github.com/thediveo/enumflag"
 	"github.com/xanzy/go-gitlab"
 
@@ -40,8 +41,29 @@ var SemverBumpIds = map[SemverBump][]string{
 	BumpMajor:      {"major"},
 }
 
+type handleSemverLabelsParams struct {
+	BumpInitial     bool
+	BumpPrerelease  bool
+	BumpPatch       bool
+	BumpMinor       bool
+	BumpMajor       bool
+	Current         bool
+	DotenvFile      string
+	DotenvVar       string
+	FetchTags       bool
+	GitlabTokenEnv  string
+	InitialLabel    string
+	InitialVersion  string
+	MajorLabel      string
+	MinorLabel      string
+	PatchLabel      string
+	PrereleaseLabel string
+	RemoteName      string
+	WorkTree        string
+}
+
 func main() {
-	logLevel := os.Getenv("LOGLEVEL")
+	logLevel := os.Getenv("GITLAB_CI_SEMVER_LABELS_LOG")
 	if logLevel == "" {
 		logLevel = "ERROR"
 	}
@@ -53,9 +75,26 @@ func main() {
 	}
 	log.SetOutput(filter)
 
-	params := handleSemverLabelsParams{}
+	viper.SetConfigName(".gitlab-ci-semver-labels")
+	viper.SetConfigType("yml")
+	viper.AddConfigPath(".")
+	viper.SetEnvPrefix("GITLAB_CI_SEMVER_LABELS")
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.AutomaticEnv()
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// ignore
+		} else {
+			fmt.Println("Error: cannot read config file", err)
+			os.Exit(2)
+		}
+	}
+	log.Println("[DEBUG] Config file used:", viper.ConfigFileUsed())
 
 	genMarkdown := ""
+
+	rootCmdParams := handleSemverLabelsParams{}
 
 	rootCmd := &cobra.Command{
 		Use:     "gitlab-ci-semver-labels",
@@ -69,7 +108,21 @@ func main() {
 				}
 				return nil
 			}
-			if err := handleSemverLabels(params); err != nil {
+
+			rootCmdParams.DotenvFile = viper.GetString("dotenv-file")
+			rootCmdParams.DotenvVar = viper.GetString("dotenv-var")
+			rootCmdParams.FetchTags = viper.GetBool("fetch-tags")
+			rootCmdParams.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			rootCmdParams.InitialLabel = viper.GetString("initial-label")
+			rootCmdParams.InitialVersion = viper.GetString("initial-version")
+			rootCmdParams.MajorLabel = viper.GetString("major-label")
+			rootCmdParams.MinorLabel = viper.GetString("minor-label")
+			rootCmdParams.PatchLabel = viper.GetString("patch-label")
+			rootCmdParams.PrereleaseLabel = viper.GetString("prerelease-label")
+			rootCmdParams.RemoteName = viper.GetString("remote-name")
+			rootCmdParams.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(rootCmdParams); err != nil {
 				fmt.Println("Error:", err)
 				os.Exit(2)
 			}
@@ -77,20 +130,48 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().VarP(enumflag.New(&params.BumpMode, "bump", SemverBumpIds, enumflag.EnumCaseInsensitive), "bump", "b", "`BUMP` version without checking labels: false, current, initial, prerelease, patch, minor, major")
-	rootCmd.Flags().BoolVarP(&params.Current, "current", "c", false, "show current version")
-	rootCmd.Flags().StringVarP(&params.DotenvFile, "dotenv-file", "d", "", "write dotenv format to `FILE`")
-	rootCmd.Flags().StringVarP(&params.DotenvVar, "dotenv-var", "D", "version", "variable `NAME` in dotenv file")
-	rootCmd.Flags().BoolVarP(&params.FetchTags, "fetch-tags", "f", true, "fetch tags from git repo")
-	rootCmd.Flags().StringVarP(&params.GitlabTokenEnv, "gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
-	rootCmd.Flags().StringVar(&params.InitialLabel, "initial-label", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
-	rootCmd.Flags().StringVar(&params.InitialVersion, "initial-version", "0.0.0", "initial `VERSION` for initial release")
-	rootCmd.Flags().StringVar(&params.MajorLabel, "major-label", "(?i)(major.release|breaking.release|semver.major|semver.breaking)", "`REGEXP` for major (breaking) release label")
-	rootCmd.Flags().StringVar(&params.MinorLabel, "minor-label", "(?i)(minor.release|feature.release|semver.initial|semver.feature)", "`REGEXP` for minor (feature) release label")
-	rootCmd.Flags().StringVar(&params.PatchLabel, "patch-label", "(?i)(patch.release|fix.release|semver.initial|semver.fix)", "`REGEXP` for patch (fix) release label")
-	rootCmd.Flags().StringVar(&params.PrereleaseLabel, "prerelease-label", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
-	rootCmd.Flags().StringVarP(&params.RemoteName, "remote-name", "r", "origin", "`NAME` of git remote")
-	rootCmd.Flags().StringVarP(&params.WorkTree, "work-tree", "C", ".", "`DIR` to be used for git operations")
+	rootCmd.Flags().BoolVar(&rootCmdParams.BumpInitial, "bump-initial", false, "set to initial version without checking labels")
+	rootCmd.Flags().BoolVar(&rootCmdParams.BumpMajor, "bump-major", false, "bump major version without checking labels")
+	rootCmd.Flags().BoolVar(&rootCmdParams.BumpMinor, "bump-minor", false, "bump minor version without checking labels")
+	rootCmd.Flags().BoolVar(&rootCmdParams.BumpPatch, "bump-patch", false, "bump patch version without checking labels")
+	rootCmd.Flags().BoolVar(&rootCmdParams.BumpPrerelease, "bump-prerelease", false, "bump prerelease version without checking labels")
+	rootCmd.Flags().BoolVarP(&rootCmdParams.Current, "current", "c", false, "show current version")
+	rootCmd.Flags().StringP("dotenv-file", "d", "", "write dotenv format to `FILE`")
+	rootCmd.Flags().StringP("dotenv-var", "D", "version", "variable `NAME` in dotenv file")
+	rootCmd.Flags().BoolP("fetch-tags", "f", true, "fetch tags from git repo")
+	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
+	rootCmd.Flags().String("initial-label", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
+	rootCmd.Flags().String("initial-version", "0.0.0", "initial `VERSION` for initial release")
+	rootCmd.Flags().String("major-label", "(?i)(major.release|breaking.release|semver.major|semver.breaking)", "`REGEXP` for major (breaking) release label")
+	rootCmd.Flags().String("minor-label", "(?i)(minor.release|feature.release|semver.initial|semver.feature)", "`REGEXP` for minor (feature) release label")
+	rootCmd.Flags().String("patch-label", "(?i)(patch.release|fix.release|semver.initial|semver.fix)", "`REGEXP` for patch (fix) release label")
+	rootCmd.Flags().String("prerelease-label", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
+	rootCmd.Flags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
+	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
+
+	rootCmd.MarkFlagsMutuallyExclusive(
+		"bump-initial",
+		"bump-major",
+		"bump-minor",
+		"bump-patch",
+		"bump-prerelease",
+		"current",
+	)
+
+	if err := viper.BindPFlag("dotenv-file", rootCmd.Flags().Lookup("dotenv-file")); err != nil {
+		fmt.Println("Error: incorrect config file:", err)
+		os.Exit(1)
+	}
+
+	if err := viper.BindPFlag("dotenv-env", rootCmd.Flags().Lookup("dotenv-env")); err != nil {
+		fmt.Println("Error: incorrect config file:", err)
+		os.Exit(1)
+	}
+
+	if err := viper.BindPFlag("fetch-tags", rootCmd.Flags().Lookup("fetch-tags")); err != nil {
+		fmt.Println("Error: incorrect config file:", err)
+		os.Exit(1)
+	}
 
 	rootCmd.Flags().StringVar(&genMarkdown, "gen-markdown", "", "Generate Markdown documentation")
 
@@ -121,23 +202,6 @@ func printVersion(ver string, dotenvFile string, dotenvVar string) error {
 	return err
 }
 
-type handleSemverLabelsParams struct {
-	BumpMode        SemverBump
-	Current         bool
-	DotenvFile      string
-	DotenvVar       string
-	FetchTags       bool
-	GitlabTokenEnv  string
-	InitialLabel    string
-	InitialVersion  string
-	MajorLabel      string
-	MinorLabel      string
-	PatchLabel      string
-	PrereleaseLabel string
-	RemoteName      string
-	WorkTree        string
-}
-
 func handleSemverLabels(params handleSemverLabelsParams) error {
 	gitlabToken := os.Getenv(params.GitlabTokenEnv)
 
@@ -153,40 +217,51 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 	}
 
 	if params.Current {
-		_, err := fmt.Println(tag)
-		return err
+		if tag != "" {
+			return printVersion(tag, params.DotenvFile, params.DotenvVar)
+		}
 	}
 
-	if params.BumpMode != BumpFalse {
-		log.Println("[DEBUG] Bump mode:", SemverBumpIds[params.BumpMode][0])
-
-		if params.BumpMode == BumpInitial {
-			if tag != "" {
-				return errors.New("semver is already initialized")
-			}
-			fmt.Println(params.InitialVersion)
-			return nil
+	if params.BumpInitial {
+		if tag != "" {
+			return errors.New("semver is already initialized")
 		}
+		return printVersion(params.InitialVersion, params.DotenvFile, params.DotenvVar)
+	}
 
-		if tag == "" {
-			return errors.New("no tag found")
-		}
+	if tag == "" {
+		return errors.New("no tag found")
+	}
 
-		var ver string
-
-		if params.BumpMode == BumpPrerelease {
-			ver, err = semver.BumpPrerelease(tag)
-		} else if params.BumpMode == BumpPatch {
-			ver, err = semver.BumpPatch(tag)
-		} else if params.BumpMode == BumpMinor {
-			ver, err = semver.BumpMinor(tag)
-		} else if params.BumpMode == BumpMajor {
-			ver, err = semver.BumpMajor(tag)
-		}
+	if params.BumpPrerelease {
+		ver, err := semver.BumpPrerelease(tag)
 		if err != nil {
 			return fmt.Errorf("cannot bump tag: %w", err)
 		}
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
+	}
 
+	if params.BumpPatch {
+		ver, err := semver.BumpPatch(tag)
+		if err != nil {
+			return fmt.Errorf("cannot bump tag: %w", err)
+		}
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
+	}
+
+	if params.BumpMinor {
+		ver, err := semver.BumpMinor(tag)
+		if err != nil {
+			return fmt.Errorf("cannot bump tag: %w", err)
+		}
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
+	}
+
+	if params.BumpMajor {
+		ver, err := semver.BumpMajor(tag)
+		if err != nil {
+			return fmt.Errorf("cannot bump tag: %w", err)
+		}
 		return printVersion(ver, params.DotenvFile, params.DotenvVar)
 	}
 
