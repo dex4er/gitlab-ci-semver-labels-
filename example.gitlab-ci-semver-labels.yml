@@ -1,4 +1,4 @@
-commit-message-regexp: (?:^|\n)See merge request !(\d+)
+commit-message-regexp: (?s)(?:^|\n)See merge request !(\d+)
 dotenv-file: ""
 dotenv-var: version
 fetch-tags: true

@@ -137,7 +137,7 @@ func main() {
 	rootCmd.Flags().BoolVar(&rootCmdParams.BumpMinor, "bump-minor", false, "bump minor version without checking labels")
 	rootCmd.Flags().BoolVar(&rootCmdParams.BumpPatch, "bump-patch", false, "bump patch version without checking labels")
 	rootCmd.Flags().BoolVar(&rootCmdParams.BumpPrerelease, "bump-prerelease", false, "bump prerelease version without checking labels")
-	rootCmd.Flags().String("commit-message-regexp", `(?:^|\n)See merge request !(\d+)`, "`REGEXP` for commit message after merged MR")
+	rootCmd.Flags().String("commit-message-regexp", `(?s)(?:^|\n)See merge request !(\d+)`, "`REGEXP` for commit message after merged MR")
 	rootCmd.Flags().BoolVarP(&rootCmdParams.Current, "current", "c", false, "show current version")
 	rootCmd.Flags().StringP("dotenv-file", "d", "", "write dotenv format to `FILE`")
 	rootCmd.Flags().StringP("dotenv-var", "D", "version", "variable `NAME` in dotenv file")

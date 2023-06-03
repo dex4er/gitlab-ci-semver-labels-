@@ -40,7 +40,7 @@ Some options can be read from the configuration file
 `.gitlab-ci-semver-labels.yml`:
 
 ```yaml
-commit-message-regexp: (?:^|\n)See merge request !(\d+)
+commit-message-regexp: (?s)(?:^|\n)See merge request !(\d+)
 dotenv-file: ""
 dotenv-var: version
 fetch-tags: true
@@ -76,37 +76,33 @@ stages:
 
 semver:validate:
   stage: semver
-  needs:
-    - lint
   rules:
     - if: $CI_MERGE_REQUEST_LABELS && $CI_MERGE_REQUEST_EVENT_TYPE == 'merge_train'
   image:
-    name: dex4er/gitlab-ci-semver-label
+    name: dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
   variables:
     GIT_DEPTH: 0
   script:
     - 'echo -n "Current version: "'
-    - gitlab-ci-semver-label --current || true
+    - gitlab-ci-semver-labels --current || true
     - 'echo -n "New version should be: "'
     - gitlab-ci-semver-label
 
 semver:bump:
   stage: semver
-  needs:
-    - lint
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/s
   image:
-    name: dex4er/gitlab-ci-semver-label
+    name: dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
   variables:
     GIT_DEPTH: 0
   script:
     - 'echo -n "Current version: "'
-    - gitlab-ci-semver-label --current || true
+    - gitlab-ci-semver-labels --current || true
     - 'echo -n "New version should be: "'
-    - gitlab-ci-semver-label --dotenv-file semver.env
+    - gitlab-ci-semver-labels --dotenv-file semver.env
   artifacts:
     reports:
       dotenv: semver.env
@@ -116,7 +112,7 @@ release:
   needs:
     - semver:bump
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/s
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
     - echo "Release $version"
