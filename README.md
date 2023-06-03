@@ -40,7 +40,7 @@ Some options can be read from the configuration file
 
 ```yaml
 dotenv-file: ""
-dotenv-var": version
+dotenv-var: version
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
 initial-label: (?i)(initial.release|semver.initial)
