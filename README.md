@@ -1,6 +1,6 @@
 # gitlab-ci-semver-labels
 
-Bump the semver for a Gitlab CI project.
+Bump the semver for a Gitlab CI project based on merge request labels.
 
 ## Usage
 
@@ -11,26 +11,27 @@ gitlab-ci-semver-labels [flags]
 ### Options
 
 ```console
-      --bump-initial              set to initial version without checking labels
-      --bump-major                bump major version without checking labels
-      --bump-minor                bump minor version without checking labels
-      --bump-patch                bump patch version without checking labels
-      --bump-prerelease           bump prerelease version without checking labels
-  -c, --current                   show current version
-  -d, --dotenv-file FILE          write dotenv format to FILE
-  -D, --dotenv-var NAME           variable NAME in dotenv file (default "version")
-  -f, --fetch-tags                fetch tags from git repo (default true)
-  -t, --gitlab-token-env VAR      name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
-  -h, --help                      help for gitlab-ci-semver-labels
-      --initial-label REGEXP      REGEXP for initial release label (default "(?i)(initial.release|semver.initial)")
-      --initial-version VERSION   initial VERSION for initial release (default "0.0.0")
-      --major-label REGEXP        REGEXP for major (breaking) release label (default "(?i)(major.release|breaking.release|semver.major|semver.breaking)")
-      --minor-label REGEXP        REGEXP for minor (feature) release label (default "(?i)(minor.release|feature.release|semver.initial|semver.feature)")
-      --patch-label REGEXP        REGEXP for patch (fix) release label (default "(?i)(patch.release|fix.release|semver.initial|semver.fix)")
-      --prerelease-label REGEXP   REGEXP for prerelease label (default "(?i)(pre.?release)")
-  -r, --remote-name NAME          NAME of git remote (default "origin")
-  -v, --version                   version for gitlab-ci-semver-labels
-  -C, --work-tree DIR             DIR to be used for git operations (default ".")
+      --bump-initial                     set to initial version without checking labels
+      --bump-major                       bump major version without checking labels
+      --bump-minor                       bump minor version without checking labels
+      --bump-patch                       bump patch version without checking labels
+      --bump-prerelease                  bump prerelease version without checking labels
+      --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?:^|\\n)See merge request !(\\d+)")
+  -c, --current                          show current version
+  -d, --dotenv-file FILE                 write dotenv format to FILE
+  -D, --dotenv-var NAME                  variable NAME in dotenv file (default "version")
+  -f, --fetch-tags                       fetch tags from git repo (default true)
+  -t, --gitlab-token-env VAR             name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
+  -h, --help                             help for gitlab-ci-semver-labels
+      --initial-label-regexp REGEXP      REGEXP for initial release label (default "(?i)(initial.release|semver.initial)")
+      --initial-version VERSION          initial VERSION for initial release (default "0.0.0")
+      --major-label-regexp REGEXP        REGEXP for major (breaking) release label (default "(?i)(major.release|breaking.release|semver.major|semver.breaking)")
+      --minor-label-regexp REGEXP        REGEXP for minor (feature) release label (default "(?i)(minor.release|feature.release|semver.initial|semver.feature)")
+      --patch-label-regexp REGEXP        REGEXP for patch (fix) release label (default "(?i)(patch.release|fix.release|semver.initial|semver.fix)")
+      --prerelease-label-regexp REGEXP   REGEXP for prerelease label (default "(?i)(pre.?release)")
+  -r, --remote-name NAME                 NAME of git remote (default "origin")
+  -v, --version                          version for gitlab-ci-semver-labels
+  -C, --work-tree DIR                    DIR to be used for git operations (default ".")
 ```
 
 ### Configuration
@@ -39,16 +40,17 @@ Some options can be read from the configuration file
 `.gitlab-ci-semver-labels.yml`:
 
 ```yaml
+commit-message-regexp: (?:^|\n)See merge request !(\d+)
 dotenv-file: ""
 dotenv-var: version
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
-initial-label: (?i)(initial.release|semver.initial)
+initial-label-regexp: (?i)(initial.release|semver.initial)
 initial-version: 0.0.0
-major-label: (?i)(major.release|breaking.release|semver.major|semver.breaking)
-minor-label: (?i)(minor.release|feature.release|semver.initial|semver.feature)
-patch-label: (?i)(patch.release|fix.release|semver.initial|semver.fix)
-prerelease-label: (?i)(pre.?release)
+major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)
+minor-label-regexp: (?i)(minor.release|feature.release|semver.initial|semver.feature)
+patch-label-regexp: (?i)(patch.release|fix.release|semver.initial|semver.fix)
+prerelease-label-regexp: (?i)(pre.?release)
 remote-name: origin
 work-tree: .
 ```
@@ -94,7 +96,7 @@ semver:bump:
   needs:
     - lint
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)Merge branch '\\w.*?' into '\\w.*?'/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/
   image:
     name: dex4er/gitlab-ci-semver-label
     entrypoint: [""]
@@ -114,7 +116,7 @@ release:
   needs:
     - semver:bump
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)Merge branch '\\w.*?' into '\\w.*?'/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
     - echo "Release $version"

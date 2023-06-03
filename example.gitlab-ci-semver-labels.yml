@@ -1,12 +1,13 @@
+commit-message-regexp: (?:^|\n)See merge request !(\d+)
 dotenv-file: ""
 dotenv-var: version
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
-initial-label: (?i)(initial.release|semver.initial)
+initial-label-regexp: (?i)(initial.release|semver.initial)
 initial-version: 0.0.0
-major-label: (?i)(major.release|breaking.release|semver.major|semver.breaking)
-minor-label: (?i)(minor.release|feature.release|semver.initial|semver.feature)
-patch-label: (?i)(patch.release|fix.release|semver.initial|semver.fix)
-prerelease-label: (?i)(pre.?release)
+major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)
+minor-label-regexp: (?i)(minor.release|feature.release|semver.initial|semver.feature)
+patch-label-regexp: (?i)(patch.release|fix.release|semver.initial|semver.fix)
+prerelease-label-regexp: (?i)(pre.?release)
 remote-name: origin
 work-tree: .
