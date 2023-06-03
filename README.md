@@ -94,7 +94,7 @@ semver:bump:
   needs:
     - lint
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /^Merge branch /
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)Merge branch '\\w.*?' into '\\w.*?'/
   image:
     name: dex4er/gitlab-ci-semver-label
     entrypoint: [""]
@@ -114,7 +114,7 @@ release:
   needs:
     - semver:bump
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /^Merge branch /
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)Merge branch '\\w.*?' into '\\w.*?'/
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
     - echo "Release $version"

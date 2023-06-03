@@ -272,12 +272,13 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 	if mergeRequestLabels == "" {
 		commitMessage := os.Getenv("CI_COMMIT_MESSAGE")
 
-		if !strings.HasPrefix(commitMessage, "Merge branch ") {
+		re_mb := regexp.MustCompile(`(^|\n)Merge branch '\w.*?' into '\w.*?'`)
+		if !re_mb.MatchString(commitMessage) {
 			log.Println("[WARNING] Not a merge commit")
 			return nil
 		}
 
-		re_mr := regexp.MustCompile(`See merge request \!(\d+)`)
+		re_mr := regexp.MustCompile(`(^|\n)See merge request \!(\d+)`)
 		matches := re_mr.FindStringSubmatch(commitMessage)
 
 		if len(matches) <= 1 {
