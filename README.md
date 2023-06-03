@@ -62,3 +62,64 @@ with all capital letters with a dash character replaced with underscore. Ie.:
 ```sh
 GITLAB_CI_SEMVER_LABELS_FETCH_TAGS="false"
 ```
+
+## CI
+
+Example `.gitlab-ci.yml`:
+
+```yaml
+stages:
+  - semver
+  - release
+
+semver:validate:
+  stage: semver
+  needs:
+    - lint
+  rules:
+    - if: $CI_MERGE_REQUEST_LABELS && $CI_MERGE_REQUEST_EVENT_TYPE == 'merge_train'
+  image:
+    name: dex4er/gitlab-ci-semver-label
+    entrypoint: [""]
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - 'echo -n "Current version: "'
+    - gitlab-ci-semver-label --current || true
+    - 'echo -n "New version should be: "'
+    - gitlab-ci-semver-label
+
+semver:bump:
+  stage: semver
+  needs:
+    - lint
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /^Merge branch /
+  image:
+    name: dex4er/gitlab-ci-semver-label
+    entrypoint: [""]
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - 'echo -n "Current version: "'
+    - gitlab-ci-semver-label --current || true
+    - 'echo -n "New version should be: "'
+    - gitlab-ci-semver-label --dotenv-file semver.env
+  artifacts:
+    reports:
+      dotenv: semver.env
+
+release:
+  stage: release
+  needs:
+    - semver:bump
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /^Merge branch /
+  image: registry.gitlab.com/gitlab-org/release-cli
+  script:
+    - echo "Release $version"
+  release:
+    tag_name: $version
+    name: Release $version
+    description: Automatic release by gitlab-ci-semver-labels
+```

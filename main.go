@@ -229,40 +229,42 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		return printVersion(params.InitialVersion, params.DotenvFile, params.DotenvVar)
 	}
 
-	if tag == "" {
-		return errors.New("no tag found")
-	}
-
-	if params.BumpPrerelease {
-		ver, err := semver.BumpPrerelease(tag)
-		if err != nil {
-			return fmt.Errorf("cannot bump tag: %w", err)
+	if params.BumpPrerelease || params.BumpPatch || params.BumpMinor || params.BumpMajor {
+		if tag == "" {
+			return errors.New("no tag found")
 		}
-		return printVersion(ver, params.DotenvFile, params.DotenvVar)
-	}
 
-	if params.BumpPatch {
-		ver, err := semver.BumpPatch(tag)
-		if err != nil {
-			return fmt.Errorf("cannot bump tag: %w", err)
+		if params.BumpPrerelease {
+			ver, err := semver.BumpPrerelease(tag)
+			if err != nil {
+				return fmt.Errorf("cannot bump tag: %w", err)
+			}
+			return printVersion(ver, params.DotenvFile, params.DotenvVar)
 		}
-		return printVersion(ver, params.DotenvFile, params.DotenvVar)
-	}
 
-	if params.BumpMinor {
-		ver, err := semver.BumpMinor(tag)
-		if err != nil {
-			return fmt.Errorf("cannot bump tag: %w", err)
+		if params.BumpPatch {
+			ver, err := semver.BumpPatch(tag)
+			if err != nil {
+				return fmt.Errorf("cannot bump tag: %w", err)
+			}
+			return printVersion(ver, params.DotenvFile, params.DotenvVar)
 		}
-		return printVersion(ver, params.DotenvFile, params.DotenvVar)
-	}
 
-	if params.BumpMajor {
-		ver, err := semver.BumpMajor(tag)
-		if err != nil {
-			return fmt.Errorf("cannot bump tag: %w", err)
+		if params.BumpMinor {
+			ver, err := semver.BumpMinor(tag)
+			if err != nil {
+				return fmt.Errorf("cannot bump tag: %w", err)
+			}
+			return printVersion(ver, params.DotenvFile, params.DotenvVar)
 		}
-		return printVersion(ver, params.DotenvFile, params.DotenvVar)
+
+		if params.BumpMajor {
+			ver, err := semver.BumpMajor(tag)
+			if err != nil {
+				return fmt.Errorf("cannot bump tag: %w", err)
+			}
+			return printVersion(ver, params.DotenvFile, params.DotenvVar)
+		}
 	}
 
 	mergeRequestLabels := os.Getenv("CI_MERGE_REQUEST_LABELS")
@@ -314,12 +316,18 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 
 		for _, label := range labels {
 			if re_initial.MatchString(label) {
+				if tag != "" {
+					return errors.New("semver is already initialized")
+				}
 				if ver != "" {
 					return errors.New("more than 1 semver label")
 				}
 				ver = params.InitialVersion
 			}
 			if re_major.MatchString(label) {
+				if tag == "" {
+					return errors.New("no tag found")
+				}
 				if ver != "" {
 					return errors.New("more than 1 semver label")
 				}
@@ -329,6 +337,9 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 				}
 			}
 			if re_minor.MatchString(label) {
+				if tag == "" {
+					return errors.New("no tag found")
+				}
 				if ver != "" {
 					return errors.New("more than 1 semver label")
 				}
@@ -338,6 +349,9 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 				}
 			}
 			if re_patch.MatchString(label) {
+				if tag == "" {
+					return errors.New("no tag found")
+				}
 				if ver != "" {
 					return errors.New("more than 1 semver label")
 				}
@@ -347,6 +361,9 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 				}
 			}
 			if re_prerelease.MatchString(label) {
+				if tag == "" {
+					return errors.New("no tag found")
+				}
 				if ver != "" {
 					return errors.New("more than 1 semver label")
 				}
