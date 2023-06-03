@@ -281,7 +281,10 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 	if mergeRequestLabels == "" {
 		commitMessage := os.Getenv("CI_COMMIT_MESSAGE")
 
-		re_mr := regexp.MustCompile(params.CommitMessageRegexp)
+		re_mr, err := regexp.Compile(params.CommitMessageRegexp)
+		if err != nil {
+			return err
+		}
 		matches := re_mr.FindStringSubmatch(commitMessage)
 
 		if len(matches) < 2 {
@@ -310,11 +313,26 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 
 		log.Println("[DEBUG] Labels:", labels)
 
-		re_initial := regexp.MustCompile(params.InitialLabelRegexp)
-		re_major := regexp.MustCompile(params.MajorLabelRegexp)
-		re_minor := regexp.MustCompile(params.MinorLabelRegexp)
-		re_patch := regexp.MustCompile(params.PatchLabelRegexp)
-		re_prerelease := regexp.MustCompile(params.PrereleaseLabelRegexp)
+		re_initial, err := regexp.Compile(params.InitialLabelRegexp)
+		if err != nil {
+			return err
+		}
+		re_major, err := regexp.Compile(params.MajorLabelRegexp)
+		if err != nil {
+			return err
+		}
+		re_minor, err := regexp.Compile(params.MinorLabelRegexp)
+		if err != nil {
+			return err
+		}
+		re_patch, err := regexp.Compile(params.PatchLabelRegexp)
+		if err != nil {
+			return err
+		}
+		re_prerelease, err := regexp.Compile(params.PrereleaseLabelRegexp)
+		if err != nil {
+			return err
+		}
 
 		var ver string
 
