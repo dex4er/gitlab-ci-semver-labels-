@@ -233,8 +233,6 @@ func printVersion(ver string, dotenvFile string, dotenvVar string) error {
 func handleSemverLabels(params handleSemverLabelsParams) error {
 	gitlabToken := os.Getenv(params.GitlabTokenEnv)
 
-	fmt.Println(gitlabToken)
-
 	log.Println("[DEBUG] Find last tag for remote:", params.RemoteName)
 
 	tag, err := git.FindLastTag(git.FindLastTagParams{
