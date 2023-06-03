@@ -2,6 +2,17 @@
 
 Bump the semver for a Gitlab CI project based on merge request labels.
 
+If no `--current` option was used nor any of `--bump` options then labels of the
+Merge Requests are taken either from `$CI_MERGE_REQUEST_LABELS` environment
+variable or from details of the Merge Requests pointed by the commit message
+from `$CI_COMMIT_MESSAGE` environment variable.
+
+Commit message should contain the string `See merge request PROJECT!NUMBER`.
+
+To fetch the details of the Merge Request the tool needs the Gitlab API token
+with the `read_api` scope. The token is taken from the `$GITLAB_TOKEN`
+environment variable by default.
+
 ## Usage
 
 ```sh
