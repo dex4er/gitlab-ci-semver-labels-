@@ -3,6 +3,7 @@ dotenv-file: ""
 dotenv-var: version
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
+gitlab-url: https://gitlab.com
 initial-label-regexp: (?i)(initial.release|semver.initial)
 initial-version: 0.0.0
 major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)

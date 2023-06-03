@@ -16,12 +16,13 @@ gitlab-ci-semver-labels [flags]
       --bump-minor                       bump minor version without checking labels
       --bump-patch                       bump patch version without checking labels
       --bump-prerelease                  bump prerelease version without checking labels
-      --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?:^|\\n)See merge request (?:\w[\w.+/-]*)?!(\\d+)")
+      --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)")
   -c, --current                          show current version
   -d, --dotenv-file FILE                 write dotenv format to FILE
   -D, --dotenv-var NAME                  variable NAME in dotenv file (default "version")
   -f, --fetch-tags                       fetch tags from git repo (default true)
   -t, --gitlab-token-env VAR             name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
+  -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://gitlab.com")
   -h, --help                             help for gitlab-ci-semver-labels
       --initial-label-regexp REGEXP      REGEXP for initial release label (default "(?i)(initial.release|semver.initial)")
       --initial-version VERSION          initial VERSION for initial release (default "0.0.0")
@@ -45,6 +46,7 @@ dotenv-file: ""
 dotenv-var: version
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
+gitlab-url: https://gitlab.com
 initial-label-regexp: (?i)(initial.release|semver.initial)
 initial-version: 0.0.0
 major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)
@@ -84,24 +86,20 @@ semver:validate:
   variables:
     GIT_DEPTH: 0
   script:
-    - 'echo -n "Current version: "'
     - gitlab-ci-semver-labels --current || true
-    - 'echo -n "New version should be: "'
     - gitlab-ci-semver-label
 
 semver:bump:
   stage: semver
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request (?:\\w[\\w.+/-]*)?!\\d+/s
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
   image:
     name: dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
   variables:
     GIT_DEPTH: 0
   script:
-    - 'echo -n "Current version: "'
     - gitlab-ci-semver-labels --current || true
-    - 'echo -n "New version should be: "'
     - gitlab-ci-semver-labels --dotenv-file semver.env
   artifacts:
     reports:
@@ -112,7 +110,7 @@ release:
   needs:
     - semver:bump
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request (?:\\w[\\w.+/-]*)?!\\d+/s
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
     - echo "Release $version"

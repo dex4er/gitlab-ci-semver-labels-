@@ -53,6 +53,7 @@ type handleSemverLabelsParams struct {
 	DotenvVar             string
 	FetchTags             bool
 	GitlabTokenEnv        string
+	GitlabUrl             string
 	InitialLabelRegexp    string
 	InitialVersion        string
 	MajorLabelRegexp      string
@@ -61,6 +62,16 @@ type handleSemverLabelsParams struct {
 	PrereleaseLabelRegexp string
 	RemoteName            string
 	WorkTree              string
+}
+
+// Return first non-empty string
+func coalesce(values ...string) string {
+	for _, str := range values {
+		if str != "" {
+			return str
+		}
+	}
+	return ""
 }
 
 func main() {
@@ -115,6 +126,7 @@ func main() {
 			rootCmdParams.DotenvVar = viper.GetString("dotenv-var")
 			rootCmdParams.FetchTags = viper.GetBool("fetch-tags")
 			rootCmdParams.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			rootCmdParams.GitlabUrl = viper.GetString("gitlab-url")
 			rootCmdParams.InitialLabelRegexp = viper.GetString("initial-label-regexp")
 			rootCmdParams.InitialVersion = viper.GetString("initial-version")
 			rootCmdParams.MajorLabelRegexp = viper.GetString("major-label-regexp")
@@ -143,6 +155,7 @@ func main() {
 	rootCmd.Flags().StringP("dotenv-var", "D", "version", "variable `NAME` in dotenv file")
 	rootCmd.Flags().BoolP("fetch-tags", "f", true, "fetch tags from git repo")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
+	rootCmd.Flags().StringP("gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")
 	rootCmd.Flags().String("initial-label-regexp", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
 	rootCmd.Flags().String("initial-version", "0.0.0", "initial `VERSION` for initial release")
 	rootCmd.Flags().String("major-label-regexp", "(?i)(major.release|breaking.release|semver.major|semver.breaking)", "`REGEXP` for major (breaking) release label")
@@ -167,6 +180,7 @@ func main() {
 		"dotenv-var",
 		"fetch-tags",
 		"gitlab-token-env",
+		"gitlab-url",
 		"initial-label-regexp",
 		"initial-version",
 		"major-label-regexp",
@@ -295,7 +309,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		mergeRequest := matches[1]
 		log.Println("[DEBUG] Merge request:", mergeRequest)
 
-		gl, err := gitlab.NewClient(gitlabToken)
+		gl, err := gitlab.NewClient(gitlabToken, gitlab.WithBaseURL(params.GitlabUrl))
 		if err != nil {
 			return fmt.Errorf("failed to create client: %w", err)
 		}
