@@ -16,7 +16,7 @@ gitlab-ci-semver-labels [flags]
       --bump-minor                       bump minor version without checking labels
       --bump-patch                       bump patch version without checking labels
       --bump-prerelease                  bump prerelease version without checking labels
-      --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?:^|\\n)See merge request !(\\d+)")
+      --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?:^|\\n)See merge request (?:\w[\w.+/-]*)?!(\\d+)")
   -c, --current                          show current version
   -d, --dotenv-file FILE                 write dotenv format to FILE
   -D, --dotenv-var NAME                  variable NAME in dotenv file (default "version")
@@ -40,7 +40,7 @@ Some options can be read from the configuration file
 `.gitlab-ci-semver-labels.yml`:
 
 ```yaml
-commit-message-regexp: (?s)(?:^|\n)See merge request !(\d+)
+commit-message-regexp: (?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)
 dotenv-file: ""
 dotenv-var: version
 fetch-tags: true
@@ -92,7 +92,7 @@ semver:validate:
 semver:bump:
   stage: semver
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/s
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request (?:\\w[\\w.+/-]*)?!\\d+/s
   image:
     name: dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
@@ -112,7 +112,7 @@ release:
   needs:
     - semver:bump
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request !\\d+/s
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\\n)See merge request (?:\\w[\\w.+/-]*)?!\\d+/s
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
     - echo "Release $version"
