@@ -111,9 +111,9 @@ test:
     GIT_DEPTH: 0
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:semver\r\e[0KDownload"
-    - gitlab-ci-semver-labels --current
-    - gitlab-ci-semver-labels --bump-prerelease
-    - gitlab-ci-semver-labels --bump-patch
-    - gitlab-ci-semver-labels --bump-minor
-    - gitlab-ci-semver-labels --bump-major
+    - gitlab-ci-semver-labels current
+    - gitlab-ci-semver-labels bump prerelease
+    - gitlab-ci-semver-labels bump patch
+    - gitlab-ci-semver-labels bump minor
+    - gitlab-ci-semver-labels bump major
     - echo -e "\e[0Ksection_end:`date +%s`:semver\r\e[0K"

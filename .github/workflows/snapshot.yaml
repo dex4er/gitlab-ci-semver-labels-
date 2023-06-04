@@ -76,15 +76,15 @@ jobs:
 
       - name: Test binary
         run: |
-          version=$(./gitlab-ci-semver-labels --current)
+          version=$(./gitlab-ci-semver-labels current)
           if [[ -z $version ]]; then
-            echo -n "Initial: "; ./gitlab-ci-semver-labels --bump-initial
+            echo -n "Initial: "; ./gitlab-ci-semver-labels bump initial
           else
             echo "Current: $version"
-            echo -n "Prelease: "; ./gitlab-ci-semver-labels --bump-prerelease
-            echo -n "Patch: "; ./gitlab-ci-semver-labels --bump-patch
-            echo -n "Minor: "; ./gitlab-ci-semver-labels --bump-minor
-            echo -n "Major: "; ./gitlab-ci-semver-labels --bump-major
+            echo -n "Prelease: "; ./gitlab-ci-semver-labels bump prerelease
+            echo -n "Patch: "; ./gitlab-ci-semver-labels bump patch
+            echo -n "Minor: "; ./gitlab-ci-semver-labels bump minor
+            echo -n "Major: "; ./gitlab-ci-semver-labels bump major
           fi
 
       - name: Build image

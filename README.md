@@ -36,7 +36,6 @@ gitlab-ci-semver-labels [command] [flags]
 
 ```console
   bump        Bump version
-  completion  Generate the autocompletion script for the specified shell
   current     Show current version
   help        Help about any command
 ```
@@ -126,7 +125,7 @@ stages:
 semver:validate:
   stage: semver
   rules:
-    - if: $CI_MERGE_REQUEST_LABELS =~ /Release/ && $CI_MERGE_REQUEST_EVENT_TYPE == 'merge_train'
+    - if: $CI_MERGE_REQUEST_LABELS =~ /semver::/ && $CI_MERGE_REQUEST_EVENT_TYPE == 'merge_train'
   image:
     name: $DOCKER_IO/dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
