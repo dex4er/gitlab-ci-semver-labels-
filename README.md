@@ -36,7 +36,7 @@ gitlab-ci-semver-labels [flags]
       --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?s)(?:^|\\n)See merge request (?:\\w[\\w.+/-]*)?!(\\d+)")
   -c, --current                          show current version
   -d, --dotenv-file FILE                 write dotenv format to FILE
-  -D, --dotenv-var NAME                  variable NAME in dotenv file (default "version")
+  -D, --dotenv-var NAME                  variable NAME in dotenv file (default "VERSION")
   -f, --fail                             fail if merge request are not matched
   -T, --fetch-tags                       fetch tags from git repo (default true)
   -t, --gitlab-token-env VAR             name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
@@ -62,7 +62,7 @@ Some options can be read from the configuration file
 ```yaml
 commit-message-regexp: (?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)
 dotenv-file: ""
-dotenv-var: version
+dotenv-var: VERSION
 fail: false
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
@@ -140,9 +140,9 @@ release:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
-    - echo "Release $version"
+    - echo "Release v$VERSION"
   release:
-    tag_name: $version
-    name: Release $version
+    tag_name: v$VERSION
+    name: Release v$VERSION
     description: Automatic release by gitlab-ci-semver-labels
 ```

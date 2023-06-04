@@ -2,7 +2,7 @@
 
 # commit-message-regexp: (?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)
 # dotenv-file: ""
-# dotenv-var: version
+# dotenv-var: VERSION
 # fail: false
 # fetch-tags: true
 # gitlab-token-env: GITLAB_TOKEN

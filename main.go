@@ -149,7 +149,7 @@ func main() {
 	rootCmd.Flags().String("commit-message-regexp", `(?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)`, "`REGEXP` for commit message after merged MR")
 	rootCmd.Flags().BoolVarP(&rootCmdParams.Current, "current", "c", false, "show current version")
 	rootCmd.Flags().StringP("dotenv-file", "d", "", "write dotenv format to `FILE`")
-	rootCmd.Flags().StringP("dotenv-var", "D", "version", "variable `NAME` in dotenv file")
+	rootCmd.Flags().StringP("dotenv-var", "D", "VERSION", "variable `NAME` in dotenv file")
 	rootCmd.Flags().BoolP("fail", "f", false, "fail if merge request are not matched")
 	rootCmd.Flags().BoolP("fetch-tags", "T", true, "fetch tags from git repo")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
