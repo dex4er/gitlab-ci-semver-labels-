@@ -8,7 +8,7 @@
 
 Bump the semver for a Gitlab CI project based on merge request labels.
 
-If no `--current` option was used nor any of `--bump` options then labels of the
+If no `current` command was used nor any of `bump` command then labels of the
 Merge Requests are taken either from `$CI_MERGE_REQUEST_LABELS` environment
 variable or from details of the Merge Requests pointed by the commit message
 from `$CI_COMMIT_MESSAGE` environment variable.
