@@ -1,0 +1,119 @@
+variables:
+  DOCKER_IO: docker.io
+
+stages:
+  - download
+  - release
+  - test
+
+download:
+  stage: download
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  image: $DOCKER_IO/debian:bullseye
+  variables:
+    ASDF_DIR: $CI_PROJECT_DIR/.cache/asdf
+    ASDF_DATA_DIR: $CI_PROJECT_DIR/.cache/asdf
+    ASDF_VERSION: v0.11.3
+    GIT_STRATEGY: none
+  before_script:
+    - echo -e "\e[0Ksection_start:`date +%s`:apt[collapsed=true]\r\e[0KInstalling APT packages"
+    - mkdir -p .cache/apt/keys .cache/apt/cache/archives/partial .cache/apt/state/lists/partial
+    - |
+      apt-get -q -y -o Dir::Cache=$CI_PROJECT_DIR/.cache/apt/cache -o Dir::State=$CI_PROJECT_DIR/.cache/apt/state \
+        update
+    - |
+      apt-get -q -y -o Dir::Cache=$CI_PROJECT_DIR/.cache/apt/cache -o Dir::State=$CI_PROJECT_DIR/.cache/apt/state --no-install-recommends \
+        install ca-certificates curl git make procps unzip xz-utils
+    - echo -e "\e[0Ksection_end:`date +%s`:apt\r\e[0K"
+    #
+    - echo -e "\e[0Ksection_start:`date +%s`:asdf[collapsed=true]\r\e[0KInstalling asdf packages"
+    - |
+      if ! [[ -d $ASDF_DIR ]]; then
+        git clone https://github.com/asdf-vm/asdf.git $ASDF_DIR --branch $ASDF_VERSION \
+          --quiet -c advice.detachedHead=false
+      fi
+    - . $ASDF_DIR/asdf.sh
+    - asdf plugin add github-cli || test $? = 2
+    - asdf install github-cli latest
+    - asdf global github-cli latest
+    - echo -e "\e[0Ksection_end:`date +%s`:asdf\r\e[0K"
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:wait\r\e[0KWait for release"
+    - |
+      while :; do
+        for i in $(seq 1 30); do
+          gh release view ${CI_COMMIT_TAG} -R dex4er/gitlab-ci-semver-labels && sleep 1m && break 2
+          sleep 10
+        done
+        exit 1
+      done
+    - echo -e "\e[0Ksection_end:`date +%s`:wait\r\e[0K"
+    #
+    - echo -e "\e[0Ksection_start:`date +%s`:download\r\e[0KDownload"
+    - gh release download -R dex4er/gitlab-ci-semver-labels -p '*' -D release
+    - echo -e "\e[0Ksection_end:`date +%s`:download\r\e[0K"
+    #
+    - echo -e "\e[0Ksection_start:`date +%s`:upload\r\e[0KUpload"
+    - cd release
+    - |
+      for f in *; do
+        curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$f" "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/$f"
+      done
+    - echo -e "\e[0Ksection_end:`date +%s`:upload\r\e[0K"
+  cache:
+    - key: job-$CI_JOB_NAME
+      paths:
+        - .cache/apt/
+        - .cache/asdf/
+
+release:
+  stage: release
+  needs:
+    - download
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  script:
+    - echo "Release $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: Release $CI_COMMIT_TAG
+    description: Downloaded from https://github.com/dex4er/gitlab-ci-semver-labels/releases/tag/$CI_COMMIT_TAG
+    assets:
+      links:
+        - name: checksums.txt
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/checksums.txt
+        - name: gitlab-ci-semver-labels-darwin-amd64
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/gitlab-ci-semver-labels-darwin-amd64
+        - name: gitlab-ci-semver-labels-darwin-arm64
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/gitlab-ci-semver-labels-darwin-arm64
+        - name: gitlab-ci-semver-labels-linux-amd64
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/gitlab-ci-semver-labels-linux-amd64
+        - name: gitlab-ci-semver-labels-linux-arm64
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/gitlab-ci-semver-labels-linux-arm64
+        - name: gitlab-ci-semver-labels-windows-amd64.exe
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/gitlab-ci-semver-labels-windows-amd64.exe
+        - name: gitlab-ci-semver-labels-windows-arm64.exe
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-ci-semver-labels/${CI_COMMIT_TAG}/gitlab-ci-semver-labels-windows-arm64.exe
+
+test:
+  stage: test
+  needs:
+    - job: release
+      optional: true
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+.\d+.\d+-?.*$/
+  image:
+    name: $DOCKER_IO/dex4er/gitlab-ci-semver-labels:$CI_COMMIT_TAG
+    entrypoint: [""]
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:semver\r\e[0KDownload"
+    - gitlab-ci-semver-labels --current
+    - gitlab-ci-semver-labels --bump-prerelease
+    - gitlab-ci-semver-labels --bump-patch
+    - gitlab-ci-semver-labels --bump-minor
+    - gitlab-ci-semver-labels --bump-major
+    - echo -e "\e[0Ksection_end:`date +%s`:semver\r\e[0K"
