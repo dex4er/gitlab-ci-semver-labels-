@@ -95,7 +95,9 @@ func main() {
 			os.Exit(2)
 		}
 	}
-	log.Println("[DEBUG] Config file used:", viper.ConfigFileUsed())
+	if configFile := viper.ConfigFileUsed(); configFile != "" {
+		log.Println("[DEBUG] Config file:", configFile)
+	}
 
 	genMarkdown := ""
 
