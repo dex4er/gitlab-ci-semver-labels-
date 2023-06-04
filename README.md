@@ -19,6 +19,13 @@ To fetch the details of the Merge Request the tool needs the Gitlab API token
 with the `read_api` scope. The token is taken from the `$GITLAB_TOKEN`
 environment variable by default.
 
+Versions printed by this tool are normalized. It means that `v` prefix is
+always trimmed from the output.
+
+The best result is when merge trains are enabled in the merge options for the
+project. In this case, it is possible to verify the bumped version before the
+actual merge is done.
+
 ## Usage
 
 ```sh
