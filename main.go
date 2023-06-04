@@ -158,7 +158,7 @@ func main() {
 	rootCmd.Flags().BoolVarP(&rootCmdParams.Current, "current", "c", false, "show current version")
 	rootCmd.Flags().StringP("dotenv-file", "d", "", "write dotenv format to `FILE`")
 	rootCmd.Flags().StringP("dotenv-var", "D", "version", "variable `NAME` in dotenv file")
-	rootCmd.Flags().BoolP("fail", "f", false, "fail if new labels are not matched")
+	rootCmd.Flags().BoolP("fail", "f", false, "fail if merge request are not matched")
 	rootCmd.Flags().BoolP("fetch-tags", "T", true, "fetch tags from git repo")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
 	rootCmd.Flags().StringP("gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")

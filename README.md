@@ -31,7 +31,7 @@ gitlab-ci-semver-labels [flags]
   -c, --current                          show current version
   -d, --dotenv-file FILE                 write dotenv format to FILE
   -D, --dotenv-var NAME                  variable NAME in dotenv file (default "version")
-  -f, --fail                             fail if new labels are not matched
+  -f, --fail                             fail if merge request are not matched
   -T, --fetch-tags                       fetch tags from git repo (default true)
   -t, --gitlab-token-env VAR             name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
   -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://git.swf.daimler.com")
