@@ -133,7 +133,7 @@ semver:validate:
     GIT_DEPTH: 0
   script:
     - gitlab-ci-semver-labels current || true
-    - gitlab-ci-semver-label bump --fail
+    - gitlab-ci-semver-labels bump --fail
 
 semver:bump:
   stage: semver
