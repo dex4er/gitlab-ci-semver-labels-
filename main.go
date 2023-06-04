@@ -321,8 +321,8 @@ func main() {
 	bumpCmd.AddCommand(bumpPatchCmd)
 
 	bumpPreleaseCmd := &cobra.Command{
-		Use:   "prelease",
-		Short: "Bump prelease version without checking labels",
+		Use:   "prerelease",
+		Short: "Bump prerelease version without checking labels",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			params.BumpPrerelease = true
 
