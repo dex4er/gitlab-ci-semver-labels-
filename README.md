@@ -42,12 +42,12 @@ gitlab-ci-semver-labels [flags]
   -t, --gitlab-token-env VAR             name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
   -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://gitlab.com")
   -h, --help                             help for gitlab-ci-semver-labels
-      --initial-label-regexp REGEXP      REGEXP for initial release label (default "(?i)(initial.release|semver.initial)")
+      --initial-label-regexp REGEXP      REGEXP for initial release label (default "(?i)initial.release|semver(.|::)initial")
       --initial-version VERSION          initial VERSION for initial release (default "0.0.0")
-      --major-label-regexp REGEXP        REGEXP for major (breaking) release label (default "(?i)(major.release|breaking.release|semver.major|semver.breaking)")
-      --minor-label-regexp REGEXP        REGEXP for minor (feature) release label (default "(?i)(minor.release|feature.release|semver.initial|semver.feature)")
-      --patch-label-regexp REGEXP        REGEXP for patch (fix) release label (default "(?i)(patch.release|fix.release|semver.initial|semver.fix)")
-      --prerelease-label-regexp REGEXP   REGEXP for prerelease label (default "(?i)(pre.?release)")
+      --major-label-regexp REGEXP        REGEXP for major (breaking) release label (default "(?i)(major|breaking).release|semver(.|::)(major|breaking)")
+      --minor-label-regexp REGEXP        REGEXP for minor (feature) release label (default "(?i)(minor|feature).release|semver(.|::)(minor|feature)")
+      --patch-label-regexp REGEXP        REGEXP for patch (fix) release label (default "(?i)(patch|fix).release|semver(.|::)(patch|fix)")
+      --prerelease-label-regexp REGEXP   REGEXP for prerelease label (default "(?i)pre.?release")
   -p, --project PROJECT                  PROJECT id or name (default $CI_PROJECT_ID)
   -r, --remote-name NAME                 NAME of git remote (default "origin")
   -v, --version                          version for gitlab-ci-semver-labels
@@ -67,12 +67,12 @@ fail: false
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
 gitlab-url: https://gitlab.com
-initial-label-regexp: (?i)(initial.release|semver.initial)
+initial-label-regexp: (?i)initial.release|semver(.|::)initial
 initial-version: 0.0.0
-major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)
-minor-label-regexp: (?i)(minor.release|feature.release|semver.initial|semver.feature)
-patch-label-regexp: (?i)(patch.release|fix.release|semver.initial|semver.fix)
-prerelease-label-regexp: (?i)(pre.?release)
+major-label-regexp: (?i)(major|breaking).release|semver(.|::)(major|breaking)
+minor-label-regexp: (?i)(minor|feature).release|semver(.|::)(minor|feature)
+patch-label-regexp: (?i)(patch|fix).release|semver(.|::)(patch|fix)
+prerelease-label-regexp: (?i)pre.?release
 project: dex4er/gitlab-ci-semver-labels
 remote-name: origin
 work-tree: .
