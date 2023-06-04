@@ -29,19 +29,32 @@ actual merge is done.
 ## Usage
 
 ```sh
-gitlab-ci-semver-labels [flags]
+gitlab-ci-semver-labels [command] [flags]
 ```
 
-### Options
+### Available Commands
 
 ```console
-      --bump-initial                     set to initial version without checking labels
-      --bump-major                       bump major version without checking labels
-      --bump-minor                       bump minor version without checking labels
-      --bump-patch                       bump patch version without checking labels
-      --bump-prerelease                  bump prerelease version without checking labels
+  bump        Bump version
+  completion  Generate the autocompletion script for the specified shell
+  current     Show current version
+  help        Help about any command
+```
+
+#### bump
+
+```console
+  initial     Set to initial version without checking labels
+  major       Bump major version without checking labels
+  minor       Bump minor version without checking labels
+  patch       Bump patch version without checking labels
+  prelease    Bump prelease version without checking labels
+```
+
+### Flags
+
+```console
       --commit-message-regexp REGEXP     REGEXP for commit message after merged MR (default "(?s)(?:^|\\n)See merge request (?:\\w[\\w.+/-]*)?!(\\d+)")
-  -c, --current                          show current version
   -d, --dotenv-file FILE                 write dotenv format to FILE
   -D, --dotenv-var NAME                  variable NAME in dotenv file (default "VERSION")
   -f, --fail                             fail if merge request are not matched
@@ -50,14 +63,14 @@ gitlab-ci-semver-labels [flags]
   -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://gitlab.com")
   -h, --help                             help for gitlab-ci-semver-labels
       --initial-label-regexp REGEXP      REGEXP for initial release label (default "(?i)initial.release|semver(.|::)initial")
-      --initial-version VERSION          initial VERSION for initial release (default "0.0.0")
+  -V  --initial-version VERSION          initial VERSION for initial release (default "0.0.0")
       --major-label-regexp REGEXP        REGEXP for major (breaking) release label (default "(?i)(major|breaking).release|semver(.|::)(major|breaking)")
       --minor-label-regexp REGEXP        REGEXP for minor (feature) release label (default "(?i)(minor|feature).release|semver(.|::)(minor|feature)")
       --patch-label-regexp REGEXP        REGEXP for patch (fix) release label (default "(?i)(patch|fix).release|semver(.|::)(patch|fix)")
       --prerelease-label-regexp REGEXP   REGEXP for prerelease label (default "(?i)pre.?release")
   -p, --project PROJECT                  PROJECT id or name (default $CI_PROJECT_ID)
   -r, --remote-name NAME                 NAME of git remote (default "origin")
-  -v, --version                          version for gitlab-ci-semver-labels
+  -v, --version                          VERSION for gitlab-ci-semver-labels
   -C, --work-tree DIR                    DIR to be used for git operations (default ".")
 ```
 
@@ -120,8 +133,8 @@ semver:validate:
   variables:
     GIT_DEPTH: 0
   script:
-    - gitlab-ci-semver-labels --current || true
-    - gitlab-ci-semver-label --fail
+    - gitlab-ci-semver-labels current || true
+    - gitlab-ci-semver-label bump --fail
 
 semver:bump:
   stage: semver
@@ -133,8 +146,8 @@ semver:bump:
   variables:
     GIT_DEPTH: 0
   script:
-    - gitlab-ci-semver-labels --current || true
-    - gitlab-ci-semver-labels --dotenv-file semver.env
+    - gitlab-ci-semver-labels current || true
+    - gitlab-ci-semver-labels bump --dotenv-file=semver.env
   artifacts:
     reports:
       dotenv: semver.env
@@ -147,9 +160,9 @@ release:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
-    - echo "Release v$VERSION"
-  release:
-    tag_name: v$VERSION
-    name: Release v$VERSION
-    description: Automatic release by gitlab-ci-semver-labels
+    - test -n "$VERSION" && release-cli create
+      --name "Release v$VERSION"
+      --description "Automatic release by gitlab-ci-semver-labels"
+      --tag-name "v$VERSION"
+      --ref $CI_COMMIT_SHA
 ```

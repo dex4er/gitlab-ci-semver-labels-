@@ -101,7 +101,7 @@ func main() {
 
 	genMarkdown := ""
 
-	rootCmdParams := handleSemverLabelsParams{}
+	params := handleSemverLabelsParams{}
 
 	rootCmd := &cobra.Command{
 		Use:     "gitlab-ci-semver-labels",
@@ -116,24 +116,66 @@ func main() {
 				return nil
 			}
 
-			rootCmdParams.CommitMessageRegexp = viper.GetString("commit-message-regexp")
-			rootCmdParams.DotenvFile = viper.GetString("dotenv-file")
-			rootCmdParams.DotenvVar = viper.GetString("dotenv-var")
-			rootCmdParams.Fail = viper.GetBool("fail")
-			rootCmdParams.FetchTags = viper.GetBool("fetch-tags")
-			rootCmdParams.GitlabTokenEnv = viper.GetString("gitlab-token-env")
-			rootCmdParams.GitlabUrl = viper.GetString("gitlab-url")
-			rootCmdParams.InitialLabelRegexp = viper.GetString("initial-label-regexp")
-			rootCmdParams.InitialVersion = viper.GetString("initial-version")
-			rootCmdParams.MajorLabelRegexp = viper.GetString("major-label-regexp")
-			rootCmdParams.MinorLabelRegexp = viper.GetString("minor-label-regexp")
-			rootCmdParams.PatchLabelRegexp = viper.GetString("patch-label-regexp")
-			rootCmdParams.PrereleaseLabelRegexp = viper.GetString("prerelease-label-regexp")
-			rootCmdParams.RemoteName = viper.GetString("remote-name")
-			rootCmdParams.Project = viper.GetString("project")
-			rootCmdParams.WorkTree = viper.GetString("work-tree")
+			return errors.New("missing command")
+		},
+	}
 
-			if err := handleSemverLabels(rootCmdParams); err != nil {
+	rootCmd.PersistentFlags().StringP("dotenv-file", "d", "", "write dotenv format to `FILE`")
+	rootCmd.PersistentFlags().StringP("dotenv-var", "D", "VERSION", "variable `NAME` in dotenv file")
+	rootCmd.PersistentFlags().BoolP("fetch-tags", "T", true, "fetch tags from git repo")
+	rootCmd.PersistentFlags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
+	rootCmd.PersistentFlags().StringP("gitlab-url", "g", "https://gitlab.com", "`URL` of the Gitlab instance")
+	rootCmd.PersistentFlags().StringP("project", "p", "", "`PROJECT` id or name (default $CI_PROJECT_ID)")
+	rootCmd.PersistentFlags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
+	rootCmd.PersistentFlags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
+
+	for _, flag := range []string{
+		"dotenv-file",
+		"dotenv-var",
+		"fetch-tags",
+		"gitlab-token-env",
+		"gitlab-url",
+		"project",
+		"remote-name",
+		"work-tree",
+	} {
+		if err := viper.BindPFlag(flag, rootCmd.PersistentFlags().Lookup(flag)); err != nil {
+			fmt.Println("Error: incorrect config file:", err)
+			os.Exit(1)
+		}
+	}
+
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	rootCmd.Flags().StringVar(&genMarkdown, "gen-markdown", "", "Generate Markdown documentation")
+
+	if err := rootCmd.Flags().MarkHidden("gen-markdown"); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+
+	bumpCmd := &cobra.Command{
+		Use:   "bump",
+		Short: "Bump version",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			params.CommitMessageRegexp = viper.GetString("commit-message-regexp")
+			params.DotenvFile = viper.GetString("dotenv-file")
+			params.DotenvVar = viper.GetString("dotenv-var")
+			params.Fail = viper.GetBool("fail")
+			params.FetchTags = viper.GetBool("fetch-tags")
+			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			params.GitlabUrl = viper.GetString("gitlab-url")
+			params.InitialLabelRegexp = viper.GetString("initial-label-regexp")
+			params.InitialVersion = viper.GetString("initial-version")
+			params.MajorLabelRegexp = viper.GetString("major-label-regexp")
+			params.MinorLabelRegexp = viper.GetString("minor-label-regexp")
+			params.PatchLabelRegexp = viper.GetString("patch-label-regexp")
+			params.PrereleaseLabelRegexp = viper.GetString("prerelease-label-regexp")
+			params.RemoteName = viper.GetString("remote-name")
+			params.Project = viper.GetString("project")
+			params.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(params); err != nil {
 				fmt.Println("Error:", err)
 				os.Exit(2)
 			}
@@ -141,61 +183,193 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().BoolVar(&rootCmdParams.BumpInitial, "bump-initial", false, "set to initial version without checking labels")
-	rootCmd.Flags().BoolVar(&rootCmdParams.BumpMajor, "bump-major", false, "bump major version without checking labels")
-	rootCmd.Flags().BoolVar(&rootCmdParams.BumpMinor, "bump-minor", false, "bump minor version without checking labels")
-	rootCmd.Flags().BoolVar(&rootCmdParams.BumpPatch, "bump-patch", false, "bump patch version without checking labels")
-	rootCmd.Flags().BoolVar(&rootCmdParams.BumpPrerelease, "bump-prerelease", false, "bump prerelease version without checking labels")
-	rootCmd.Flags().String("commit-message-regexp", `(?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)`, "`REGEXP` for commit message after merged MR")
-	rootCmd.Flags().BoolVarP(&rootCmdParams.Current, "current", "c", false, "show current version")
-	rootCmd.Flags().StringP("dotenv-file", "d", "", "write dotenv format to `FILE`")
-	rootCmd.Flags().StringP("dotenv-var", "D", "VERSION", "variable `NAME` in dotenv file")
-	rootCmd.Flags().BoolP("fail", "f", false, "fail if merge request are not matched")
-	rootCmd.Flags().BoolP("fetch-tags", "T", true, "fetch tags from git repo")
-	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
-	rootCmd.Flags().StringP("gitlab-url", "g", "https://gitlab.com", "`URL` of the Gitlab instance")
-	rootCmd.Flags().String("initial-label-regexp", "(?i)initial.release|semver(.|::)initial", "`REGEXP` for initial release label")
-	rootCmd.Flags().String("initial-version", "0.0.0", "initial `VERSION` for initial release")
-	rootCmd.Flags().String("major-label-regexp", "(?i)(major|breaking).release|semver(.|::)(major|breaking)", "`REGEXP` for major (breaking) release label")
-	rootCmd.Flags().String("minor-label-regexp", "(?i)(minor|feature).release|semver(.|::)(minor|feature)", "`REGEXP` for minor (feature) release label")
-	rootCmd.Flags().String("patch-label-regexp", "(?i)(patch|fix).release|semver(.|::)(patch|fix)", "`REGEXP` for patch (fix) release label")
-	rootCmd.Flags().String("prerelease-label-regexp", "(?i)pre.?release", "`REGEXP` for prerelease label")
-	rootCmd.Flags().StringP("project", "p", "", "`PROJECT` id or name (default $CI_PROJECT_ID)")
-	rootCmd.Flags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
-	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
-
-	rootCmd.MarkFlagsMutuallyExclusive(
-		"bump-initial",
-		"bump-major",
-		"bump-minor",
-		"bump-patch",
-		"bump-prerelease",
-		"current",
-	)
+	bumpCmd.Flags().String("commit-message-regexp", `(?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)`, "`REGEXP` for commit message after merged MR")
+	bumpCmd.Flags().BoolP("fail", "f", false, "fail if labels are not matched")
+	bumpCmd.Flags().String("initial-label-regexp", "(?i)initial.release|semver(.|::)initial", "`REGEXP` for initial release label")
+	bumpCmd.Flags().StringP("initial-version", "V", "0.0.0", "initial `VERSION` for initial release")
+	bumpCmd.Flags().String("major-label-regexp", "(?i)(major|breaking).release|semver(.|::)(major|breaking)", "`REGEXP` for major (breaking) release label")
+	bumpCmd.Flags().String("minor-label-regexp", "(?i)(minor|feature).release|semver(.|::)(minor|feature)", "`REGEXP` for minor (feature) release label")
+	bumpCmd.Flags().String("patch-label-regexp", "(?i)(patch|fix).release|semver(.|::)(patch|fix)", "`REGEXP` for patch (fix) release label")
+	bumpCmd.Flags().String("prerelease-label-regexp", "(?i)pre.?release", "`REGEXP` for prerelease label")
 
 	for _, flag := range []string{
 		"commit-message-regexp",
-		"dotenv-file",
-		"dotenv-var",
 		"fail",
-		"fetch-tags",
-		"gitlab-token-env",
-		"gitlab-url",
 		"initial-label-regexp",
 		"initial-version",
 		"major-label-regexp",
 		"minor-label-regexp",
 		"patch-label-regexp",
 		"prerelease-label-regexp",
-		"project",
-		"remote-name",
-		"work-tree",
 	} {
-		if err := viper.BindPFlag(flag, rootCmd.Flags().Lookup(flag)); err != nil {
+		if err := viper.BindPFlag(flag, bumpCmd.Flags().Lookup(flag)); err != nil {
 			fmt.Println("Error: incorrect config file:", err)
 			os.Exit(1)
 		}
 	}
+
+	bumpInitialCmd := &cobra.Command{
+		Use:   "initial",
+		Short: "Set to initial version without checking labels",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			params.BumpInitial = true
+
+			params.DotenvFile = viper.GetString("dotenv-file")
+			params.DotenvVar = viper.GetString("dotenv-var")
+			params.FetchTags = viper.GetBool("fetch-tags")
+			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			params.GitlabUrl = viper.GetString("gitlab-url")
+			params.InitialVersion = viper.GetString("initial-version")
+			params.RemoteName = viper.GetString("remote-name")
+			params.Project = viper.GetString("project")
+			params.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(params); err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+
+	bumpInitialCmd.Flags().StringP("initial-version", "V", "0.0.0", "initial `VERSION` for initial release")
+
+	for _, flag := range []string{
+		"initial-version",
+	} {
+		if err := viper.BindPFlag(flag, bumpInitialCmd.Flags().Lookup(flag)); err != nil {
+			fmt.Println("Error: incorrect config file:", err)
+			os.Exit(1)
+		}
+	}
+
+	bumpCmd.AddCommand(bumpInitialCmd)
+
+	bumpMajorCmd := &cobra.Command{
+		Use:   "major",
+		Short: "Bump major version without checking labels",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			params.BumpMajor = true
+
+			params.DotenvFile = viper.GetString("dotenv-file")
+			params.DotenvVar = viper.GetString("dotenv-var")
+			params.FetchTags = viper.GetBool("fetch-tags")
+			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			params.GitlabUrl = viper.GetString("gitlab-url")
+			params.RemoteName = viper.GetString("remote-name")
+			params.Project = viper.GetString("project")
+			params.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(params); err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+
+	bumpCmd.AddCommand(bumpMajorCmd)
+
+	bumpMinorCmd := &cobra.Command{
+		Use:   "minor",
+		Short: "Bump minor version without checking labels",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			params.BumpMinor = true
+
+			params.DotenvFile = viper.GetString("dotenv-file")
+			params.DotenvVar = viper.GetString("dotenv-var")
+			params.FetchTags = viper.GetBool("fetch-tags")
+			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			params.GitlabUrl = viper.GetString("gitlab-url")
+			params.RemoteName = viper.GetString("remote-name")
+			params.Project = viper.GetString("project")
+			params.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(params); err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+
+	bumpCmd.AddCommand(bumpMinorCmd)
+
+	bumpPatchCmd := &cobra.Command{
+		Use:   "patch",
+		Short: "Bump patch version without checking labels",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			params.BumpPatch = true
+
+			params.DotenvFile = viper.GetString("dotenv-file")
+			params.DotenvVar = viper.GetString("dotenv-var")
+			params.FetchTags = viper.GetBool("fetch-tags")
+			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			params.GitlabUrl = viper.GetString("gitlab-url")
+			params.RemoteName = viper.GetString("remote-name")
+			params.Project = viper.GetString("project")
+			params.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(params); err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+
+	bumpCmd.AddCommand(bumpPatchCmd)
+
+	bumpPreleaseCmd := &cobra.Command{
+		Use:   "prelease",
+		Short: "Bump prelease version without checking labels",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			params.BumpPrerelease = true
+
+			params.DotenvFile = viper.GetString("dotenv-file")
+			params.DotenvVar = viper.GetString("dotenv-var")
+			params.FetchTags = viper.GetBool("fetch-tags")
+			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			params.GitlabUrl = viper.GetString("gitlab-url")
+			params.RemoteName = viper.GetString("remote-name")
+			params.Project = viper.GetString("project")
+			params.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(params); err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+
+	bumpCmd.AddCommand(bumpPreleaseCmd)
+
+	rootCmd.AddCommand(bumpCmd)
+
+	currentCmd := &cobra.Command{
+		Use:   "current",
+		Short: "Show current version",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			params.Current = true
+
+			params.DotenvFile = viper.GetString("dotenv-file")
+			params.DotenvVar = viper.GetString("dotenv-var")
+			params.FetchTags = viper.GetBool("fetch-tags")
+			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
+			params.GitlabUrl = viper.GetString("gitlab-url")
+			params.RemoteName = viper.GetString("remote-name")
+			params.WorkTree = viper.GetString("work-tree")
+
+			if err := handleSemverLabels(params); err != nil {
+				fmt.Println("Error:", err)
+				os.Exit(2)
+			}
+			return nil
+		},
+	}
+
+	rootCmd.AddCommand(currentCmd)
 
 	if err := viper.BindEnv("gitlab-url", "CI_SERVER_URL"); err != nil {
 		fmt.Println("Error:", err)
@@ -203,13 +377,6 @@ func main() {
 	}
 
 	if err := viper.BindEnv("project", "CI_PROJECT_ID"); err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
-
-	rootCmd.Flags().StringVar(&genMarkdown, "gen-markdown", "", "Generate Markdown documentation")
-
-	if err := rootCmd.Flags().MarkHidden("gen-markdown"); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
@@ -240,6 +407,9 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 	gitlabToken := os.Getenv(params.GitlabTokenEnv)
 
 	log.Println("[DEBUG] Find last tag for remote:", params.RemoteName)
+	if params.FetchTags {
+		log.Println("[DEBUG] Fetch tags")
+	}
 
 	tag, err := git.FindLastTag(git.FindLastTagParams{
 		RepositoryPath: params.WorkTree,
