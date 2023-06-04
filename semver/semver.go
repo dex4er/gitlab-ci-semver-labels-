@@ -72,3 +72,13 @@ func BumpMajor(version string) (string, error) {
 
 	return newVer.String(), nil
 }
+
+func Current(version string) (string, error) {
+	ver, err := semver.NewVersion(version)
+	if err != nil {
+		return "", err
+	}
+	log.Printf("[TRACE] Current(version=%v)\n", version)
+
+	return ver.String(), nil
+}

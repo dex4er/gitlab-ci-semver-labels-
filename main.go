@@ -251,9 +251,11 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 	}
 
 	if params.Current {
-		if tag != "" {
-			return printVersion(tag, params.DotenvFile, params.DotenvVar)
+		ver, err := semver.Current(tag)
+		if err != nil {
+			return fmt.Errorf("current tag (%s) is not semver: %w", tag, err)
 		}
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
 	}
 
 	if params.BumpInitial {
