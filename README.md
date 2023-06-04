@@ -1,5 +1,11 @@
 # gitlab-ci-semver-labels
 
+[![GitHub](https://img.shields.io/github/v/tag/dex4er/gitlab-ci-semver-labels?label=GitHub)](https://github.com/dex4er/gitlab-ci-semver-labels)
+[![Snapshot](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/snapshot.yaml/badge.svg)](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/snapshot.yaml)
+[![Release](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/release.yaml/badge.svg)](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/release.yaml)
+[![Trunk Check](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/trunk.yaml/badge.svg)](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/trunk.yaml)
+[![Docker Image Version](https://img.shields.io/docker/v/dex4er/gitlab-ci-semver-labels/latest?label=docker&logo=docker)](https://hub.docker.com/r/dex4er/gitlab-ci-semver-labels)
+
 Bump the semver for a Gitlab CI project based on merge request labels.
 
 If no `--current` option was used nor any of `--bump` options then labels of the
