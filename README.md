@@ -34,7 +34,7 @@ gitlab-ci-semver-labels [flags]
   -f, --fail                             fail if merge request are not matched
   -T, --fetch-tags                       fetch tags from git repo (default true)
   -t, --gitlab-token-env VAR             name for environment VAR with Gitlab token (default "GITLAB_TOKEN")
-  -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://git.swf.daimler.com")
+  -g, --gitlab-url URL                   URL of the Gitlab instance (default "https://gitlab.com")
   -h, --help                             help for gitlab-ci-semver-labels
       --initial-label-regexp REGEXP      REGEXP for initial release label (default "(?i)(initial.release|semver.initial)")
       --initial-version VERSION          initial VERSION for initial release (default "0.0.0")
@@ -42,7 +42,7 @@ gitlab-ci-semver-labels [flags]
       --minor-label-regexp REGEXP        REGEXP for minor (feature) release label (default "(?i)(minor.release|feature.release|semver.initial|semver.feature)")
       --patch-label-regexp REGEXP        REGEXP for patch (fix) release label (default "(?i)(patch.release|fix.release|semver.initial|semver.fix)")
       --prerelease-label-regexp REGEXP   REGEXP for prerelease label (default "(?i)(pre.?release)")
-  -p, --project PROJECT                  PROJECT with MR (default "32781")
+  -p, --project PROJECT                  PROJECT id or name (default $CI_PROJECT_ID)
   -r, --remote-name NAME                 NAME of git remote (default "origin")
   -v, --version                          version for gitlab-ci-semver-labels
   -C, --work-tree DIR                    DIR to be used for git operations (default ".")
@@ -60,14 +60,14 @@ dotenv-var: version
 fail: false
 fetch-tags: true
 gitlab-token-env: GITLAB_TOKEN
-gitlab-url: https://gitlab.com # or $CI_SERVER_URL
+gitlab-url: https://gitlab.com
 initial-label-regexp: (?i)(initial.release|semver.initial)
 initial-version: 0.0.0
 major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)
 minor-label-regexp: (?i)(minor.release|feature.release|semver.initial|semver.feature)
 patch-label-regexp: (?i)(patch.release|fix.release|semver.initial|semver.fix)
 prerelease-label-regexp: (?i)(pre.?release)
-project: "" # or $CI_PROJECT_NAME
+project: dex4er/gitlab-ci-semver-labels
 remote-name: origin
 work-tree: .
 ```
@@ -82,11 +82,17 @@ with all capital letters with a dash character replaced with an underscore. Ie.:
 GITLAB_CI_SEMVER_LABELS_FETCH_TAGS="false"
 ```
 
+Additionally `$CI_PROJECT_ID` is used as a default `project` option value and
+`$CI_SERVER_URL` as a default `gitlab-url` option value.
+
 ## CI
 
 Example `.gitlab-ci.yml`:
 
 ```yaml
+variables:
+  DOCKER_IO: docker.io
+
 stages:
   - semver
   - release
@@ -96,7 +102,7 @@ semver:validate:
   rules:
     - if: $CI_MERGE_REQUEST_LABELS =~ /Release/ && $CI_MERGE_REQUEST_EVENT_TYPE == 'merge_train'
   image:
-    name: dex4er/gitlab-ci-semver-labels
+    name: $DOCKER_IO/dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
   variables:
     GIT_DEPTH: 0
@@ -109,7 +115,7 @@ semver:bump:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
   image:
-    name: dex4er/gitlab-ci-semver-labels
+    name: $DOCKER_IO/dex4er/gitlab-ci-semver-labels
     entrypoint: [""]
   variables:
     GIT_DEPTH: 0

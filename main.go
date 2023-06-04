@@ -67,16 +67,6 @@ type handleSemverLabelsParams struct {
 	WorkTree              string
 }
 
-// Return first non-empty string
-func coalesce(values ...string) string {
-	for _, str := range values {
-		if str != "" {
-			return str
-		}
-	}
-	return ""
-}
-
 func main() {
 	logLevel := os.Getenv("GITLAB_CI_SEMVER_LABELS_LOG")
 	if logLevel == "" {
@@ -161,14 +151,14 @@ func main() {
 	rootCmd.Flags().BoolP("fail", "f", false, "fail if merge request are not matched")
 	rootCmd.Flags().BoolP("fetch-tags", "T", true, "fetch tags from git repo")
 	rootCmd.Flags().StringP("gitlab-token-env", "t", "GITLAB_TOKEN", "name for environment `VAR` with Gitlab token")
-	rootCmd.Flags().StringP("gitlab-url", "g", coalesce(os.Getenv("CI_SERVER_URL"), "https://gitlab.com"), "`URL` of the Gitlab instance")
+	rootCmd.Flags().StringP("gitlab-url", "g", "https://gitlab.com", "`URL` of the Gitlab instance")
 	rootCmd.Flags().String("initial-label-regexp", "(?i)(initial.release|semver.initial)", "`REGEXP` for initial release label")
 	rootCmd.Flags().String("initial-version", "0.0.0", "initial `VERSION` for initial release")
 	rootCmd.Flags().String("major-label-regexp", "(?i)(major.release|breaking.release|semver.major|semver.breaking)", "`REGEXP` for major (breaking) release label")
 	rootCmd.Flags().String("minor-label-regexp", "(?i)(minor.release|feature.release|semver.initial|semver.feature)", "`REGEXP` for minor (feature) release label")
 	rootCmd.Flags().String("patch-label-regexp", "(?i)(patch.release|fix.release|semver.initial|semver.fix)", "`REGEXP` for patch (fix) release label")
 	rootCmd.Flags().String("prerelease-label-regexp", "(?i)(pre.?release)", "`REGEXP` for prerelease label")
-	rootCmd.Flags().StringP("project", "p", os.Getenv("CI_PROJECT_ID"), "`PROJECT` with MR")
+	rootCmd.Flags().StringP("project", "p", "", "`PROJECT` id or name (default $CI_PROJECT_ID)")
 	rootCmd.Flags().StringP("remote-name", "r", "origin", "`NAME` of git remote")
 	rootCmd.Flags().StringP("work-tree", "C", ".", "`DIR` to be used for git operations")
 
@@ -203,6 +193,16 @@ func main() {
 			fmt.Println("Error: incorrect config file:", err)
 			os.Exit(1)
 		}
+	}
+
+	if err := viper.BindEnv("gitlab-url", "CI_SERVER_URL"); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+
+	if err := viper.BindEnv("project", "CI_PROJECT_ID"); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
 
 	rootCmd.Flags().StringVar(&genMarkdown, "gen-markdown", "", "Generate Markdown documentation")
@@ -327,11 +327,13 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		}
 		log.Println("[DEBUG] Merge request:", mergeRequest)
 
+		log.Println("[DEBUG] GitLab URL:", params.GitlabUrl)
 		gl, err := gitlab.NewClient(gitlabToken, gitlab.WithBaseURL(params.GitlabUrl))
 		if err != nil {
 			return fmt.Errorf("failed to create client: %w", err)
 		}
 
+		log.Println("[DEBUG] Project:", params.Project)
 		opt := &gitlab.GetMergeRequestsOptions{}
 		mr, _, err := gl.MergeRequests.GetMergeRequest(params.Project, mergeRequest, opt)
 

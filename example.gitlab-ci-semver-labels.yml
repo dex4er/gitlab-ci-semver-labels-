@@ -1,16 +1,18 @@
-commit-message-regexp: (?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)
-dotenv-file: ""
-dotenv-var: version
-fail: false
-fetch-tags: true
-gitlab-token-env: GITLAB_TOKEN
-gitlab-url: https://gitlab.com # or $CI_SERVER_URL
-initial-label-regexp: (?i)(initial.release|semver.initial)
-initial-version: 0.0.0
-major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)
-minor-label-regexp: (?i)(minor.release|feature.release|semver.initial|semver.feature)
-patch-label-regexp: (?i)(patch.release|fix.release|semver.initial|semver.fix)
-prerelease-label-regexp: (?i)(pre.?release)
-project: "" # or $CI_PROJECT_NAME
-remote-name: origin
-work-tree: .
+## .gitlab-ci-semver.labels.yml
+
+# commit-message-regexp: (?s)(?:^|\n)See merge request (?:\w[\w.+/-]*)?!(\d+)
+# dotenv-file: ""
+# dotenv-var: version
+# fail: false
+# fetch-tags: true
+# gitlab-token-env: GITLAB_TOKEN
+# gitlab-url: $CI_SERVER_URL or "https://gitlab.com"
+# initial-label-regexp: (?i)(initial.release|semver.initial)
+# initial-version: 0.0.0
+# major-label-regexp: (?i)(major.release|breaking.release|semver.major|semver.breaking)
+# minor-label-regexp: (?i)(minor.release|feature.release|semver.initial|semver.feature)
+# patch-label-regexp: (?i)(patch.release|fix.release|semver.initial|semver.fix)
+# prerelease-label-regexp: (?i)(pre.?release)
+# project: $CI_PROJECT_ID
+# remote-name: origin
+# work-tree: .
