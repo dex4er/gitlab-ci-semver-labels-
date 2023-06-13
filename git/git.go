@@ -23,7 +23,7 @@ type FindLastTagParams struct {
 
 func FindLastTag(params FindLastTagParams) (string, error) {
 	log.Printf(
-		"[TRACE] FindLastTag(RepositoryPath=%v, RemoteName=%v, GitlabToken=%v, FetchTags=%v)\n",
+		"[TRACE] FindLastTag(RepositoryPath=%v, RemoteName=%v, GitlabToken=%v, FetchTags=%v)",
 		params.RepositoryPath,
 		params.RemoteName,
 		params.GitlabToken,
@@ -92,7 +92,7 @@ func fetchTags(repo *git.Repository, remoteName string, accessToken string) erro
 
 // Find the most recent tag that points to the given commit or annotated tag object
 func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) (string, error) {
-	log.Printf("[TRACE] findMostRecentTagForCommit(repo=%v, commitObj=%v)\n", repo, commitObj)
+	log.Printf("[TRACE] findMostRecentTagForCommit(repo=%v, commitObj=%v)", repo, commitObj)
 	tagRefs, err := repo.Tags()
 	if err != nil {
 		return "", err
@@ -102,7 +102,7 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 	var mostRecentCommitTime time.Time
 
 	err = tagRefs.ForEach(func(ref *plumbing.Reference) error {
-		log.Printf("[TRACE] findMostRecentTagForCommit tagRefs.ForEach(ref=%v)\n", ref)
+		log.Printf("[TRACE] findMostRecentTagForCommit tagRefs.ForEach(ref=%v)", ref)
 
 		var tagTime time.Time
 
@@ -111,15 +111,15 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 			tagObj, err := repo.TagObject(refHash)
 
 			if err == nil {
-				log.Printf("[TRACE] tagObj=%v\n", tagObj)
+				log.Printf("[TRACE] tagObj=%v", tagObj)
 				tagTime = tagObj.Tagger.When
 			} else {
 				commitObj, err := repo.CommitObject(refHash)
 				if err == nil {
-					log.Printf("[TRACE] commitObj=%v\n", commitObj)
+					log.Printf("[TRACE] commitObj=%v", commitObj)
 					tagTime = commitObj.Author.When
 				} else {
-					log.Printf("[DEBUG] no commit nor annotated tag for a given hash: %s: %v\n", refHash, err)
+					log.Printf("[DEBUG] no commit nor annotated tag for a given hash: %s: %v", refHash, err)
 					return nil
 				}
 			}
@@ -131,7 +131,7 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 				if mostRecentTag == "" {
 					mostRecentTag = tag
 					mostRecentCommitTime = tagTime
-					log.Printf("[TRACE] mostRecentTag=%v\n", mostRecentTag)
+					log.Printf("[TRACE] mostRecentTag=%v", mostRecentTag)
 				} else {
 					commitTime := tagTime
 
@@ -139,10 +139,10 @@ func findMostRecentTagForCommit(repo *git.Repository, commitObj *object.Commit) 
 						mostRecentTag = tag
 						mostRecentCommitTime = commitTime
 					}
-					log.Printf("[TRACE] mostRecentTag=%v\n", mostRecentTag)
+					log.Printf("[TRACE] mostRecentTag=%v", mostRecentTag)
 				}
 			} else {
-				log.Printf("[WARNING] %v is not a valid semver\n", tag)
+				log.Printf("[WARNING] %v is not a valid semver", tag)
 			}
 		}
 

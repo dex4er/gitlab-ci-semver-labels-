@@ -27,7 +27,7 @@ func BumpPrerelease(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[TRACE] BumpPrerelease(version=%v)\n", version)
+	log.Printf("[TRACE] BumpPrerelease(version=%v)", version)
 
 	newVer, err := ver.SetPrerelease(incrementNumberAsString(ver.Prerelease()))
 	if err != nil {
@@ -42,7 +42,7 @@ func BumpPatch(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[TRACE] BumpPatch(version=%v)\n", version)
+	log.Printf("[TRACE] BumpPatch(version=%v)", version)
 
 	newVer := ver.IncPatch()
 
@@ -54,7 +54,7 @@ func BumpMinor(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[TRACE] BumpMinor(version=%v)\n", version)
+	log.Printf("[TRACE] BumpMinor(version=%v)", version)
 
 	newVer := ver.IncMinor()
 
@@ -66,7 +66,7 @@ func BumpMajor(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[TRACE] BumpMajor(version=%v)\n", version)
+	log.Printf("[TRACE] BumpMajor(version=%v)", version)
 
 	newVer := ver.IncMajor()
 
@@ -78,7 +78,7 @@ func Current(version string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Printf("[TRACE] Current(version=%v)\n", version)
+	log.Printf("[TRACE] Current(version=%v)", version)
 
 	return ver.String(), nil
 }
