@@ -422,6 +422,8 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		return fmt.Errorf("cannot find the last git tag: %w", err)
 	}
 
+	log.Printf("[DEBUG] Most recent tag: %v", tag)
+
 	if params.Current {
 		ver, err := semver.Current(tag)
 		if err != nil {
