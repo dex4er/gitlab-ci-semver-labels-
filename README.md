@@ -160,7 +160,7 @@ release:
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
     - test -n "$VERSION" && release-cli create
-      --name "Release v$VERSION"
+      --name "v$VERSION"
       --description "Automatic release by gitlab-ci-semver-labels"
       --tag-name "v$VERSION"
       --ref $CI_COMMIT_SHA
