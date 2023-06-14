@@ -103,11 +103,7 @@ Any option might be overridden with an environment variable with the name the
 same as an option with the prefix `GITLAB_CI_SEMVER_LABELS_` and an option name
 with all capital letters with a dash character replaced with an underscore. Ie.:
 
-```sh
-GITLAB_CI_SEMVER_LABELS_FETCH_TAGS="false"
-```
-
-Additionally `$CI_PROJECT_ID` is used as a default `project` option value and
+Additionally, `$CI_PROJECT_ID` is used as a default `project` option value and
 `$CI_SERVER_URL` as a default `gitlab-url` option value.
 
 ## CI
@@ -159,9 +155,13 @@ release:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
   image: registry.gitlab.com/gitlab-org/release-cli
   script:
-    - test -n "$VERSION" && release-cli create
+    - if [ -n "$VERSION" ]; then
+      release-cli create
       --name "v$VERSION"
       --description "Automatic release by gitlab-ci-semver-labels"
       --tag-name "v$VERSION"
-      --ref $CI_COMMIT_SHA
+      --ref $CI_COMMIT_SHA;
+      else
+      echo "No new version. Release skipped.";
+      fi
 ```
