@@ -9,6 +9,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	github.com/thediveo/enumflag v0.10.1
+	github.com/thediveo/enumflag/v2 v2.0.4
 	github.com/xanzy/go-gitlab v0.86.0
 )
 
