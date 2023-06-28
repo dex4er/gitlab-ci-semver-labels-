@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
-	"github.com/thediveo/enumflag"
 	"github.com/xanzy/go-gitlab"
 
 	"github.com/dex4er/gitlab-ci-semver-labels/git"
@@ -21,26 +20,6 @@ import (
 )
 
 var version = "dev"
-
-type SemverBump enumflag.Flag
-
-const (
-	BumpFalse SemverBump = iota
-	BumpInitial
-	BumpPrerelease
-	BumpPatch
-	BumpMinor
-	BumpMajor
-)
-
-var SemverBumpIds = map[SemverBump][]string{
-	BumpFalse:      {"false"},
-	BumpInitial:    {"initial"},
-	BumpPrerelease: {"prerelease"},
-	BumpPatch:      {"patch"},
-	BumpMinor:      {"minor"},
-	BumpMajor:      {"major"},
-}
 
 type handleSemverLabelsParams struct {
 	BumpInitial           bool
