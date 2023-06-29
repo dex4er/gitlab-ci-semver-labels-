@@ -1,14 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base"],
-  "packageRules": [
-    {
-      "extractVersion": "^v(?<version>.*)$",
-      "matchManagers": ["regex"]
-    }
-  ],
   "regexManagers": [
     {
+      "extractVersionTemplate": "^v(?<version>.*)$",
       "fileMatch": ["^.tool-versions$"],
       "matchStrings": [
         "\\s+(?<currentValue>\\S+)\\s*#\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>\\S+))?(\\s+registryUrl=(?<registryUrl>\\S+))?\\s*\\n"
