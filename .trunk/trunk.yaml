@@ -7,9 +7,15 @@ plugins:
       ref: v1.2.2
       uri: https://github.com/trunk-io/plugins
 lint:
+  definitions:
+    - name: golangci-lint
+      environment:
+        - name: CGO_ENABLED
+          value: "0"
   disabled:
     - checkov
     - gokart
+    - terrascan
     - trivy
     - trufflehog
   enabled:
@@ -24,7 +30,7 @@ lint:
     - osv-scanner@1.3.6
     - prettier@3.0.2
     - renovate@36.57.4
-    - terrascan@1.18.3
+    - taplo@0.8.1
     - yamllint@1.32.0
 runtimes:
   enabled:
