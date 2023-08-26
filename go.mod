@@ -1,6 +1,6 @@
 module github.com/dex4er/gitlab-ci-semver-labels
 
-go 1.21
+go 1.20
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
