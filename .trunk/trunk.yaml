@@ -12,6 +12,13 @@ lint:
       environment:
         - name: CGO_ENABLED
           value: "0"
+        - name: GO111MODULE
+          value: auto
+        - name: GOLANGCI_LINT_CACHE
+          value: ${cachedir}
+        - name: PATH
+          list:
+            - ${env.PATH}
   disabled:
     - checkov
     - gokart
