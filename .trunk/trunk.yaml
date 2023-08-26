@@ -7,18 +7,6 @@ plugins:
       ref: v1.2.2
       uri: https://github.com/trunk-io/plugins
 lint:
-  definitions:
-    - name: golangci-lint
-      environment:
-        - name: CGO_ENABLED
-          value: "0"
-        - name: GO111MODULE
-          value: auto
-        - name: GOLANGCI_LINT_CACHE
-          value: ${cachedir}
-        - name: PATH
-          list:
-            - ${env.PATH}
   disabled:
     - checkov
     - gokart
@@ -31,7 +19,7 @@ lint:
     - git-diff-check
     - gitleaks@8.18.0
     - gofmt@1.20.4
-    - golangci-lint@1.54.2
+    - golangci-lint@1.53.3
     - hadolint@2.12.0
     - markdownlint@0.35.0
     - osv-scanner@1.3.6
