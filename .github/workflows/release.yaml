@@ -55,6 +55,19 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Configure AWS credentials
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
+      - name: Login to Amazon Public ECR
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
+
       - name: Calculate new version number
         id: version
         run: echo VERSION=$(make version) | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT
@@ -87,9 +100,13 @@ jobs:
       - name: Test image
         run: make test-image PLATFORM="${{ matrix.platform }}"
 
-      - name: Push to Docker
+      - name: Push to DockerHub
         if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         run: make push DOCKER_REPO="${DOCKER_REPO}" PLATFORM="${{ matrix.platform }}"
+
+      - name: Push to Amazon Public ECR
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        run: make push DOCKER_REPO="${PUBLIC_ECR_REPO}" PLATFORM="${{ matrix.platform }}"
 
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
@@ -121,10 +138,23 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Configure AWS credentials
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
+      - name: Login to Amazon Public ECR
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
+
       - name: Reuse new version number
         run: echo VERSION=${{ needs.build.outputs.version }} | tee -a $GITHUB_ENV
 
-      - name: Tag multiarch images
+      - name: Tag multiarch images for DockerHub
         run: |
           docker manifest create ${DOCKER_REPO}:v${VERSION} ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:v${VERSION}
@@ -134,6 +164,17 @@ jobs:
           docker manifest push ${DOCKER_REPO}:v${VERSION%%.*}
           docker manifest create ${DOCKER_REPO}:latest ${DOCKER_REPO}:v${VERSION}-linux-arm64 ${DOCKER_REPO}:v${VERSION}-linux-amd64
           docker manifest push ${DOCKER_REPO}:latest
+
+      - name: Tag multiarch images for DockerHub
+        run: |
+          docker manifest create ${PUBLIC_ECR_REPO}:v${VERSION} ${PUBLIC_ECR_REPO}:v${VERSION}-linux-arm64 ${PUBLIC_ECR_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${PUBLIC_ECR_REPO}:v${VERSION}
+          docker manifest create ${PUBLIC_ECR_REPO}:v${VERSION%.*} ${PUBLIC_ECR_REPO}:v${VERSION}-linux-arm64 ${PUBLIC_ECR_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${PUBLIC_ECR_REPO}:v${VERSION%.*}
+          docker manifest create ${PUBLIC_ECR_REPO}:v${VERSION%%.*} ${PUBLIC_ECR_REPO}:v${VERSION}-linux-arm64 ${PUBLIC_ECR_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${PUBLIC_ECR_REPO}:v${VERSION%%.*}
+          docker manifest create ${PUBLIC_ECR_REPO}:latest ${PUBLIC_ECR_REPO}:v${VERSION}-linux-arm64 ${PUBLIC_ECR_REPO}:v${VERSION}-linux-amd64
+          docker manifest push ${PUBLIC_ECR_REPO}:latest
 
   release:
     name: Release
