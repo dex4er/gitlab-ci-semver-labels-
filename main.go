@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
-	"github.com/xanzy/go-gitlab"
+	gitlab "github.com/xanzy/go-gitlab"
 
 	"github.com/dex4er/gitlab-ci-semver-labels/git"
 	"github.com/dex4er/gitlab-ci-semver-labels/semver"
