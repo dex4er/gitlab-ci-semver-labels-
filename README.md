@@ -5,6 +5,7 @@
 [![Release](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/release.yaml/badge.svg)](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/release.yaml)
 [![Trunk Check](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/trunk.yaml/badge.svg)](https://github.com/dex4er/gitlab-ci-semver-labels/actions/workflows/trunk.yaml)
 [![Docker Image Version](https://img.shields.io/docker/v/dex4er/gitlab-ci-semver-labels?label=Docker&logo=docker&sort=semver)](https://hub.docker.com/r/dex4er/gitlab-ci-semver-labels)
+[![Amazon ECR Image Version](https://img.shields.io/docker/v/dex4er/gitlab-ci-semver-labels?label=Amazon%20ECR&logo=Amazon+AWS&sort=semver)](https://gallery.ecr.aws/dex4er/gitlab-ci-semver-labels)
 
 Bump the semver for a Gitlab CI project based on merge request labels.
 
@@ -31,6 +32,29 @@ actual merge is done.
 ```sh
 gitlab-ci-semver-labels [command] [flags]
 ```
+
+### Docker
+
+From DockerHub:
+
+```sh
+docker run -it dex4er/gitlab-ci-semver-labels [command] [flags]
+```
+
+or from Amazon ECR Public:
+
+```sh
+docker run -it public.ecr.aws/q8i3x1g6/gitlab-ci-semver-labels [command] [flags]
+```
+
+Supported tags:
+
+- vX.Y.Z-linux-amd64
+- vX.Y.Z-linux-arm64
+- vX.Y.Z
+- vX.Y
+- vX
+- latest
 
 ### Available Commands
 
