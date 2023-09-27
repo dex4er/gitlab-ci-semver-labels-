@@ -29,7 +29,7 @@ lint:
     - yamllint@1.32.0
 runtimes:
   enabled:
-    - go@1.21.0
+    - go@1.21.1
     - node@18.12.1
     - python@3.10.8
 actions:
