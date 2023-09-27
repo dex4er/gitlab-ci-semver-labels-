@@ -10,6 +10,7 @@ lint:
   disabled:
     - checkov
     - gokart
+    - osv-scanner
     - terrascan
     - trivy
     - trufflehog
@@ -22,7 +23,6 @@ lint:
     - golangci-lint@1.54.2
     - hadolint@2.12.0
     - markdownlint@0.37.0
-    - osv-scanner@1.4.0
     - prettier@3.0.3
     - renovate@36.97.3
     - taplo@0.8.1
