@@ -29,7 +29,7 @@ lint:
     - yamllint@1.33.0
 runtimes:
   enabled:
-    - go@1.21.1 # datasource=github-releases depName=golang/go
+    - go@1.21.4 # datasource=github-releases depName=golang/go
     - node@18.12.1
     - python@3.10.8
 actions:
