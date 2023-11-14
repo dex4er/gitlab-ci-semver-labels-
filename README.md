@@ -144,6 +144,7 @@ variables:
 stages:
   - semver
   - release
+  - label
 
 semver:validate:
   stage: semver
@@ -157,6 +158,7 @@ semver:validate:
   script:
     - gitlab-ci-semver-labels current || true
     - gitlab-ci-semver-labels bump --fail
+  cache: []
 
 semver:bump:
   stage: semver
@@ -173,6 +175,7 @@ semver:bump:
   artifacts:
     reports:
       dotenv: semver.env
+  cache: []
 
 release:
   stage: release
@@ -191,4 +194,22 @@ release:
       else
       echo "No new version. Release skipped.";
       fi
+  cache: []
+
+.semver:label:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
+  image:
+    name: registry.gitlab.com/gitlab-org/cli:v1.35.0
+    entrypoint: [""]
+  variables:
+    GITLAB_HOST: $CI_SERVER_URL
+  script:
+    - MR=$(echo "$CI_COMMIT_MESSAGE" | sed -n '/^See merge request [A-Za-z0-9.+\/-]*![0-9][0-9]*$/s/^See merge request [A-Za-z0-9.+\/-]*!\([0-9][0-9]*\)$/\1/p');
+      if [ -n "$VERSION" ] && [ -n "$MR" ]; then
+      glab api -X PUT "projects/:id/merge_requests/$MR" --field "add_labels=v::${VERSION#v}" --silent;
+      else
+      echo "No new version. Label skipped.";
+      fi
+  cache: []
 ```
