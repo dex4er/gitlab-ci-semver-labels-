@@ -33,6 +33,7 @@ func FindLastTag(params FindLastTagParams) (string, error) {
 	// Open the repository
 	repo, err := git.PlainOpen(params.RepositoryPath)
 	if err != nil {
+		log.Printf("[TRACE] error for git.PlainOpen")
 		return "", err
 	}
 
@@ -40,6 +41,7 @@ func FindLastTag(params FindLastTagParams) (string, error) {
 	if params.FetchTags {
 		err = fetchTags(repo, params.RemoteName, params.GitlabToken)
 		if err != nil {
+			log.Printf("[TRACE] error for fetchTags")
 			return "", err
 		}
 	}
@@ -47,18 +49,21 @@ func FindLastTag(params FindLastTagParams) (string, error) {
 	// Get the HEAD reference
 	ref, err := repo.Head()
 	if err != nil {
+		log.Printf("[TRACE] error for repo.Head")
 		return "", err
 	}
 
 	// Retrieve the commit object for HEAD
 	commitObj, err := repo.CommitObject(ref.Hash())
 	if err != nil {
+		log.Printf("[TRACE] error for repo.CommitObject")
 		return "", err
 	}
 
 	// Find the most recent tag that points to the HEAD commit
 	tag, err := findMostRecentTagForCommit(repo, commitObj)
 	if err != nil {
+		log.Printf("[TRACE] error for findMostRecentTagForCommit")
 		return "", err
 	}
 
@@ -79,7 +84,7 @@ func getAuth(accessToken string) transport.AuthMethod {
 // Fetch all tags
 func fetchTags(repo *git.Repository, remoteName string, accessToken string) error {
 	fetchOptions := &git.FetchOptions{
-		RemoteName: "origin",
+		RemoteName: remoteName,
 		RefSpecs:   []config.RefSpec{"+refs/tags/*:refs/tags/*"},
 		Auth:       getAuth(accessToken),
 	}
