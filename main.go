@@ -23,7 +23,6 @@ var version = "dev"
 
 type handleSemverLabelsParams struct {
 	BumpInitial           bool
-	BumpPrerelease        bool
 	BumpPatch             bool
 	BumpMinor             bool
 	BumpMajor             bool
@@ -40,6 +39,7 @@ type handleSemverLabelsParams struct {
 	MajorLabelRegexp      string
 	MinorLabelRegexp      string
 	PatchLabelRegexp      string
+	Prerelease            bool
 	PrereleaseLabelRegexp string
 	Project               string
 	RemoteName            string
@@ -169,6 +169,7 @@ func main() {
 	bumpCmd.Flags().String("major-label-regexp", "(?i)(major|breaking).release|semver(.|::)(major|breaking)", "`REGEXP` for major (breaking) release label")
 	bumpCmd.Flags().String("minor-label-regexp", "(?i)(minor|feature).release|semver(.|::)(minor|feature)", "`REGEXP` for minor (feature) release label")
 	bumpCmd.Flags().String("patch-label-regexp", "(?i)(patch|fix).release|semver(.|::)(patch|fix)", "`REGEXP` for patch (fix) release label")
+	bumpCmd.PersistentFlags().BoolP("prerelease", "P", false, "bump version as prerelease")
 	bumpCmd.Flags().String("prerelease-label-regexp", "(?i)pre.?release", "`REGEXP` for prerelease label")
 
 	for _, flag := range []string{
@@ -182,6 +183,15 @@ func main() {
 		"prerelease-label-regexp",
 	} {
 		if err := viper.BindPFlag(flag, bumpCmd.Flags().Lookup(flag)); err != nil {
+			fmt.Println("Error: incorrect config file:", err)
+			os.Exit(1)
+		}
+	}
+
+	for _, flag := range []string{
+		"prerelease",
+	} {
+		if err := viper.BindPFlag(flag, bumpCmd.PersistentFlags().Lookup(flag)); err != nil {
 			fmt.Println("Error: incorrect config file:", err)
 			os.Exit(1)
 		}
@@ -236,6 +246,7 @@ func main() {
 			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
 			params.GitlabUrl = viper.GetString("gitlab-url")
 			params.RemoteName = viper.GetString("remote-name")
+			params.Prerelease = viper.GetBool("prerelease")
 			params.Project = viper.GetString("project")
 			params.WorkTree = viper.GetString("work-tree")
 
@@ -261,6 +272,7 @@ func main() {
 			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
 			params.GitlabUrl = viper.GetString("gitlab-url")
 			params.RemoteName = viper.GetString("remote-name")
+			params.Prerelease = viper.GetBool("prerelease")
 			params.Project = viper.GetString("project")
 			params.WorkTree = viper.GetString("work-tree")
 
@@ -286,6 +298,7 @@ func main() {
 			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
 			params.GitlabUrl = viper.GetString("gitlab-url")
 			params.RemoteName = viper.GetString("remote-name")
+			params.Prerelease = viper.GetBool("prerelease")
 			params.Project = viper.GetString("project")
 			params.WorkTree = viper.GetString("work-tree")
 
@@ -298,31 +311,6 @@ func main() {
 	}
 
 	bumpCmd.AddCommand(bumpPatchCmd)
-
-	bumpPreleaseCmd := &cobra.Command{
-		Use:   "prerelease",
-		Short: "Bump prerelease version without checking labels",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			params.BumpPrerelease = true
-
-			params.DotenvFile = viper.GetString("dotenv-file")
-			params.DotenvVar = viper.GetString("dotenv-var")
-			params.FetchTags = viper.GetBool("fetch-tags")
-			params.GitlabTokenEnv = viper.GetString("gitlab-token-env")
-			params.GitlabUrl = viper.GetString("gitlab-url")
-			params.RemoteName = viper.GetString("remote-name")
-			params.Project = viper.GetString("project")
-			params.WorkTree = viper.GetString("work-tree")
-
-			if err := handleSemverLabels(params); err != nil {
-				fmt.Println("Error:", err)
-				os.Exit(2)
-			}
-			return nil
-		},
-	}
-
-	bumpCmd.AddCommand(bumpPreleaseCmd)
 
 	rootCmd.AddCommand(bumpCmd)
 
@@ -415,45 +403,44 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 		if tag != "" {
 			return errors.New("semver is already initialized")
 		}
-		return printVersion(params.InitialVersion, params.DotenvFile, params.DotenvVar)
+
+		ver := params.InitialVersion
+
+		if params.Prerelease {
+			ver, err = semver.BumpPrerelease(ver)
+		}
+		if err != nil {
+			return fmt.Errorf("cannot bump tag: %w", err)
+		}
+
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
 	}
 
-	if params.BumpPrerelease || params.BumpPatch || params.BumpMinor || params.BumpMajor {
+	if params.BumpPatch || params.BumpMinor || params.BumpMajor {
 		if tag == "" {
 			return errors.New("no tag found")
 		}
 
-		if params.BumpPrerelease {
-			ver, err := semver.BumpPrerelease(tag)
-			if err != nil {
-				return fmt.Errorf("cannot bump tag: %w", err)
-			}
-			return printVersion(ver, params.DotenvFile, params.DotenvVar)
-		}
+		ver := tag
+		var err error
 
 		if params.BumpPatch {
-			ver, err := semver.BumpPatch(tag)
-			if err != nil {
-				return fmt.Errorf("cannot bump tag: %w", err)
-			}
-			return printVersion(ver, params.DotenvFile, params.DotenvVar)
+			ver, err = semver.BumpPatch(ver, params.Prerelease)
 		}
 
 		if params.BumpMinor {
-			ver, err := semver.BumpMinor(tag)
-			if err != nil {
-				return fmt.Errorf("cannot bump tag: %w", err)
-			}
-			return printVersion(ver, params.DotenvFile, params.DotenvVar)
+			ver, err = semver.BumpMinor(ver, params.Prerelease)
 		}
 
 		if params.BumpMajor {
-			ver, err := semver.BumpMajor(tag)
-			if err != nil {
-				return fmt.Errorf("cannot bump tag: %w", err)
-			}
-			return printVersion(ver, params.DotenvFile, params.DotenvVar)
+			ver, err = semver.BumpMajor(ver, params.Prerelease)
 		}
+
+		if err != nil {
+			return fmt.Errorf("cannot bump tag: %w", err)
+		}
+
+		return printVersion(ver, params.DotenvFile, params.DotenvVar)
 	}
 
 	var labels gitlab.Labels
@@ -525,6 +512,14 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 	}
 
 	var ver string
+	prerelease := false
+
+	for _, label := range labels {
+		if re_prerelease.MatchString(label) {
+			log.Println("[DEBUG] Bump: prerelease")
+			prerelease = true
+		}
+	}
 
 	for _, label := range labels {
 		if re_initial.MatchString(label) {
@@ -536,6 +531,12 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 				return errors.New("more than 1 semver label")
 			}
 			ver = params.InitialVersion
+			if prerelease {
+				ver, err = semver.BumpPrerelease(ver)
+			}
+			if err != nil {
+				return fmt.Errorf("cannot bump tag: %w", err)
+			}
 		}
 		if re_major.MatchString(label) {
 			log.Println("[DEBUG] Bump: major")
@@ -545,7 +546,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			if ver != "" {
 				return errors.New("more than 1 semver label")
 			}
-			ver, err = semver.BumpMajor(tag)
+			ver, err = semver.BumpMajor(tag, prerelease)
 			if err != nil {
 				return fmt.Errorf("cannot bump tag: %w", err)
 			}
@@ -558,7 +559,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			if ver != "" {
 				return errors.New("more than 1 semver label")
 			}
-			ver, err = semver.BumpMinor(tag)
+			ver, err = semver.BumpMinor(tag, prerelease)
 			if err != nil {
 				return fmt.Errorf("cannot bump tag: %w", err)
 			}
@@ -571,20 +572,7 @@ func handleSemverLabels(params handleSemverLabelsParams) error {
 			if ver != "" {
 				return errors.New("more than 1 semver label")
 			}
-			ver, err = semver.BumpPatch(tag)
-			if err != nil {
-				return fmt.Errorf("cannot bump tag: %w", err)
-			}
-		}
-		if re_prerelease.MatchString(label) {
-			log.Println("[DEBUG] Bump: prerelease")
-			if tag == "" {
-				return errors.New("no tag found")
-			}
-			if ver != "" {
-				return errors.New("more than 1 semver label")
-			}
-			ver, err = semver.BumpPrerelease(tag)
+			ver, err = semver.BumpPatch(tag, prerelease)
 			if err != nil {
 				return fmt.Errorf("cannot bump tag: %w", err)
 			}

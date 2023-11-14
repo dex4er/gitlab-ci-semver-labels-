@@ -37,38 +37,68 @@ func BumpPrerelease(version string) (string, error) {
 	return newVer.String(), nil
 }
 
-func BumpPatch(version string) (string, error) {
+func BumpPatch(version string, prerelease bool) (string, error) {
 	ver, err := semver.NewVersion(version)
 	if err != nil {
 		return "", err
 	}
 	log.Printf("[TRACE] BumpPatch(version=%v)", version)
 
-	newVer := ver.IncPatch()
+	incVer := ver.IncPatch()
+
+	if !prerelease {
+		return incVer.String(), nil
+	}
+
+	newVer, err := incVer.SetPrerelease(incrementNumberAsString(ver.Prerelease()))
+
+	if err != nil {
+		return "", fmt.Errorf("cannot bump semver: %w", err)
+	}
 
 	return newVer.String(), nil
 }
 
-func BumpMinor(version string) (string, error) {
+func BumpMinor(version string, prerelease bool) (string, error) {
 	ver, err := semver.NewVersion(version)
 	if err != nil {
 		return "", err
 	}
 	log.Printf("[TRACE] BumpMinor(version=%v)", version)
 
-	newVer := ver.IncMinor()
+	incVer := ver.IncMinor()
+
+	if !prerelease {
+		return incVer.String(), nil
+	}
+
+	newVer, err := incVer.SetPrerelease(incrementNumberAsString(ver.Prerelease()))
+
+	if err != nil {
+		return "", fmt.Errorf("cannot bump semver: %w", err)
+	}
 
 	return newVer.String(), nil
 }
 
-func BumpMajor(version string) (string, error) {
+func BumpMajor(version string, prerelease bool) (string, error) {
 	ver, err := semver.NewVersion(version)
 	if err != nil {
 		return "", err
 	}
 	log.Printf("[TRACE] BumpMajor(version=%v)", version)
 
-	newVer := ver.IncMajor()
+	incVer := ver.IncMajor()
+
+	if !prerelease {
+		return incVer.String(), nil
+	}
+
+	newVer, err := incVer.SetPrerelease(incrementNumberAsString(ver.Prerelease()))
+
+	if err != nil {
+		return "", fmt.Errorf("cannot bump semver: %w", err)
+	}
 
 	return newVer.String(), nil
 }

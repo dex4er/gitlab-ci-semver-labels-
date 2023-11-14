@@ -33,7 +33,7 @@ func FindLastTag(params FindLastTagParams) (string, error) {
 	// Open the repository
 	repo, err := git.PlainOpen(params.RepositoryPath)
 	if err != nil {
-		log.Printf("[TRACE] error for git.PlainOpen")
+		log.Printf("[TRACE] error after git.PlainOpen(%v)", params.RepositoryPath)
 		return "", err
 	}
 
@@ -41,7 +41,7 @@ func FindLastTag(params FindLastTagParams) (string, error) {
 	if params.FetchTags {
 		err = fetchTags(repo, params.RemoteName, params.GitlabToken)
 		if err != nil {
-			log.Printf("[TRACE] error for fetchTags")
+			log.Printf("[TRACE] error after fetchTags(repo, %v, %v)", params.RemoteName, params.GitlabToken)
 			return "", err
 		}
 	}
@@ -49,21 +49,21 @@ func FindLastTag(params FindLastTagParams) (string, error) {
 	// Get the HEAD reference
 	ref, err := repo.Head()
 	if err != nil {
-		log.Printf("[TRACE] error for repo.Head")
+		log.Printf("[TRACE] error after repo.Head()")
 		return "", err
 	}
 
 	// Retrieve the commit object for HEAD
 	commitObj, err := repo.CommitObject(ref.Hash())
 	if err != nil {
-		log.Printf("[TRACE] error for repo.CommitObject")
+		log.Printf("[TRACE] error after repo.CommitObject(ref.Hash())")
 		return "", err
 	}
 
 	// Find the most recent tag that points to the HEAD commit
 	tag, err := findMostRecentTagForCommit(repo, commitObj)
 	if err != nil {
-		log.Printf("[TRACE] error for findMostRecentTagForCommit")
+		log.Printf("[TRACE] error after findMostRecentTagForCommit(repo, commitObj)")
 		return "", err
 	}
 
