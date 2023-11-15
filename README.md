@@ -196,7 +196,10 @@ release:
       fi
   cache: []
 
-.semver:label:
+label:
+  stage: label
+  needs:
+    - release
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_MESSAGE =~ /(^|\n)See merge request (\w[\w.+\/-]*)?!\d+/s
   image:
