@@ -1,9 +1,11 @@
 module github.com/dex4er/gitlab-ci-semver-labels
 
-go 1.20
+go 1.21
+
+toolchain go1.23.4
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/go-git/go-git/v5 v5.10.0
 	github.com/hashicorp/logutils v1.0.0
 	github.com/spf13/cobra v1.8.0
