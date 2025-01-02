@@ -202,7 +202,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
-          version: 1.22.1 # datasource=github-releases depName=goreleaser/goreleaser
+          version: 2.5.1 # datasource=github-releases depName=goreleaser/goreleaser
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
